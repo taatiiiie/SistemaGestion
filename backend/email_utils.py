@@ -13,8 +13,8 @@ from sib_api_v3_sdk.rest import ApiException
 
 # ── DOMINIO DEL FRONTEND (Dinámico para Producción) ──────────────────
 def _obtener_base_url():
-    # Si estás en Render u otro hosting, lee la URL pública, sino usa localhost
-    return os.environ.get("FRONTEND_URL", "http://127.0.0.1:5500").rstrip('/')
+    # En producción leerá tu URL de Render, si no existe usará localhost por defecto
+    return os.environ.get("FRONTEND_URL", "https://sistema-ticket-eyqv.onrender.com").rstrip('/')
 
 
 # ── BREVO ────────────────────────────────────────────────────────
@@ -30,7 +30,6 @@ def _enviar_con_brevo(to_email, subject, html_body):
         sib_api_v3_sdk.ApiClient(configuration)
     )
 
-    # CORRECCIÓN: Evita remitentes vacíos que rompen la API de Brevo
     remitente_email = os.environ.get("BREVO_SENDER_EMAIL")
     if not remitente_email:
         print("[BREVO CONFIG ERROR]: Falta configurar la variable 'BREVO_SENDER_EMAIL' en Render.")
@@ -182,44 +181,3 @@ def enviar_verificacion(to_email: str, nombre: str, token: str) -> bool:
     </div>
     """
     return enviar_email(to_email, 'Confirma tu cuenta - Defensa Civil Bellavista', _base_template('Confirma tu cuenta', contenido))
-
-
-def enviar_reset_password(to_email: str, nombre: str, token: str) -> bool:
-    base_url = _obtener_base_url()
-    link = f'{base_url}/frontend/reset-password.html?token={token}'
-    contenido = f"""
-    <p>Hola <strong>{nombre}</strong>,</p>
-    <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en el
-       <strong>Sistema de Defensa Civil Bellavista</strong>.</p>
-    <p>Haz clic en el botón para crear tu nueva contraseña:</p>
-    <p style="text-align:center;margin:24px 0">
-      <a class="btn" href="{link}" target="_blank" rel="noopener">Restablecer contraseña</a>
-    </p>
-    <p style="text-align:center;color:#6b7280;font-size:12px;margin-top:8px">
-      Si el botón no abre, copia y pega esta dirección en tu navegador:<br>
-      <span style="color:#0d47a1">{link}</span>
-    </p>
-    <div class="warning">
-      Este enlace expira en <strong>2 horas</strong>. Si no solicitaste este cambio,
-      ignora este correo y tu contraseña permanecerá sin cambios.
-    </div>
-    """
-    return enviar_email(to_email, 'Restablecer contraseña - Defensa Civil Bellavista', _base_template('Restablecer contraseña', contenido))
-
-
-def enviar_bienvenida(to_email: str, nombre: str, username: str) -> bool:
-    base_url = _obtener_base_url()
-    contenido = f"""
-    <p>Hola <strong>{nombre}</strong>,</p>
-    <p>Tu cuenta en el <strong>Sistema de Defensa Civil Bellavista</strong> ha sido activada correctamente.</p>
-    <p>Tus credenciales de acceso:</p>
-    <ul style="color:#374151;font-size:15px;line-height:1.8;">
-      <li>Usuario: <strong>{username}</strong></li>
-      <li>Contraseña: la que registraste</li>
-    </ul>
-    <p style="text-align:center"><a class="btn" href="{base_url}/frontend/login.html">Ir al sistema</a></p>
-    <p style="color:#6b7280;font-size:13px;">
-      Si tienes problemas para acceder, contacta al administrador del sistema.
-    </p>
-    """
-    return enviar_email(to_email, 'Bienvenido al Sistema de Defensa Civil', _base_template('¡Cuenta activada!', contenido))

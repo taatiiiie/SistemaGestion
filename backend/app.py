@@ -155,7 +155,7 @@ def me():
     return jsonify(user)
 
 
-# ── AUTH: REGISTRO Y VERIFICACION DE EMAIL ───────────────────────
+# ── AUTH: REGISTRO CON PROTECCIÓN CONTRA FALLOS SMTP ───────────────────────
 
 @app.route('/api/register', methods=['POST'])
 def register():
@@ -194,32 +194,45 @@ def register():
             return jsonify({'error': 'Ese correo ya está registrado con otra cuenta activa'}), 409
 
     pw_hash = hash_password(password)
-    user_id = crear_usuario(username, pw_hash, nombre, rol, email=email, activo=0, email_verificado=0)
-    token_email = crear_token_email(email, 'verificacion', user_id)
-
+    
+    # Por defecto, creamos al usuario inactivo si el email está configurado
+    esta_configurado = email_configurado()
+    activo_inicial = 0 if esta_configurado else 1
+    verificado_inicial = 0 if esta_configurado else 1
+    
+    user_id = crear_usuario(username, pw_hash, nombre, rol, email=email, activo=activo_inicial, email_verificado=verificado_inicial)
     registrar_log('registro', f'Nuevo usuario: {username} ({email})', ip=_ip())
 
-    if not email_configurado():
-        actualizar_usuario(user_id, activo=1, email_verificado=1)
+    if not esta_configurado:
         return jsonify({
             'ok': True,
             'mensaje': 'Cuenta creada. Puedes iniciar sesión directamente (SMTP no configurado).',
             'email_enviado': False,
         })
 
-    enviado = enviar_verificacion(email, nombre, token_email)
-    if enviado:
-        return jsonify({
-            'ok': True,
-            'mensaje': f'Cuenta creada. Te enviamos un código de 6 dígitos a {email}.',
-            'email_enviado': True,
-        })
-    else:
-        return jsonify({
-            'error': f'Cuenta creada pero no se pudo enviar el correo a {email}. '
-                     f'Verifica la configuración SMTP o pide al administrador que active tu cuenta.',
-            'cuenta_creada': True,
-        }), 500
+    token_email = crear_token_email(email, 'verificacion', user_id)
+    
+    # BLINDAJE: Enviamos el correo protegiendo el flujo de excepciones HTTP/Timeout de Brevo
+    try:
+        enviado = enviar_verificacion(email, nombre, token_email)
+        if enviado:
+            return jsonify({
+                'ok': True,
+                'mensaje': f'Cuenta creada. Te enviamos un código de 6 dígitos a {email}.',
+                'email_enviado': True,
+            })
+    except Exception as e:
+        print(f"[SMTP - ERROR CONTROLADO]: Falló la API de Brevo/Sendinblue: {e}")
+
+    # Si llegó aquí es porque 'enviado' fue False o la API de Brevo dio un error (401/Timeout)
+    # Activamos la cuenta de emergencia para evitar bloquear la experiencia del usuario
+    actualizar_usuario(user_id, activo=1, email_verificado=1)
+    return jsonify({
+        'ok': True,
+        'mensaje': 'Cuenta creada exitosamente. Iniciando sesión de emergencia (Ocurrió una falla técnica de envío de correo).',
+        'email_enviado': False,
+        'con_bypass': True
+    })
 
 
 @app.route('/api/verify-email', methods=['POST'])
@@ -252,7 +265,10 @@ def verify_email():
 
     usuario = obtener_usuario_por_id(user_id)
     if usuario:
-        enviar_bienvenida(email, usuario['nombre'], usuario['username'])
+        try:
+            enviar_bienvenida(email, usuario['nombre'], usuario['username'])
+        except Exception:
+            pass
 
     return jsonify({'ok': True, 'mensaje': 'Email verificado correctamente. Ya puedes iniciar sesión.'})
 
@@ -268,11 +284,14 @@ def resend_verification():
     usuario = obtener_usuario_por_email(email)
     if usuario and not usuario['activo']:
         token_email = crear_token_email(email, 'verificacion', usuario['id'])
-        enviado = enviar_verificacion(email, usuario['nombre'], token_email)
-        registrar_log('resend_verificacion', f'Reenvío verificación: {email}', ip=_ip())
-        if enviado:
-            return jsonify({'ok': True, 'email': email})
-        return jsonify({'error': 'No se pudo enviar el correo. Intenta de nuevo.'}), 500
+        try:
+            enviado = enviar_verificacion(email, usuario['nombre'], token_email)
+            registrar_log('resend_verificacion', f'Reenvío verificación: {email}', ip=_ip())
+            if enviado:
+                return jsonify({'ok': True, 'email': email})
+        except Exception:
+            pass
+        return jsonify({'error': 'No se pudo enviar el correo en este momento. Intenta de nuevo.'}), 500
 
     return jsonify({'ok': True, 'email': email})
 
@@ -288,9 +307,12 @@ def forgot_password():
     usuario = obtener_usuario_por_email(email)
     if usuario and usuario['activo']:
         token_email = crear_token_email(email, 'reset_password', usuario['id'])
-        enviar_reset_password(email, usuario['nombre'], token_email)
-        registrar_log('reset_solicitado', f'Reset solicitado para: {email}',
-                      user_id=usuario['id'], ip=_ip())
+        try:
+            enviar_reset_password(email, usuario['nombre'], token_email)
+            registrar_log('reset_solicitado', f'Reset solicitado para: {email}',
+                          user_id=usuario['id'], ip=_ip())
+        except Exception:
+            pass
 
     return jsonify({
         'ok': True,
@@ -599,7 +621,7 @@ def post_zona():
     if not nombre:
         return jsonify({'error': 'Nombre requerido'}), 400
     id_ = crear_zona(nombre, data.get('descripcion', ''),
-                     data.get('nivel_riesgo', 'medio'), data.get('color', '#f59e0b'))
+                      data.get('nivel_riesgo', 'medio'), data.get('color', '#f59e0b'))
     registrar_log('crear_zona', nombre, user_id=request.current_user['id'], ip=_ip())
     return jsonify({'ok': True, 'id': id_}), 201
 
@@ -620,7 +642,7 @@ def delete_zona(zona_id):
     return jsonify({'ok': True})
 
 
-# ── RECURSOS DE EMERGENCY ─────────────────────────────────────────
+# ── RECURSOS DE ENERGENGY ─────────────────────────────────────────
 
 @app.route('/api/recursos', methods=['GET'])
 @require_auth()

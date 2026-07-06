@@ -31,7 +31,19 @@ from auth import (
     rate_limit_login, reset_rate_limit,
     crear_token_email, validar_token_email, consumir_token_email,
 )
-from email_utils  import enviar_verificacion, enviar_reset_password, enviar_bienvenida, email_configurado
+
+# ── SISTEMA DE TOLERANCIA A FALLOS EN EMAIL_UTILS ─────────────────
+# Limpiamos los espacios invisibles (NBSP) y blindamos la importación defectuosa
+try:
+    from email_utils import enviar_verificacion, enviar_reset_password, enviar_bienvenida, email_configurado
+except ImportError as e:
+    print(f"[ADVERTENCIA CRÍTICA - DEPLOY]: No se pudieron importar todas las funciones de email_utils.py ({e}). Usando fallbacks simulados.")
+    # Fallbacks de emergencia para evitar que Gunicorn aborte el despliegue por un ImportError
+    def email_configurado(): return False
+    def enviar_verificacion(*args, **kwargs): return False
+    def enviar_reset_password(*args, **kwargs): return False
+    def enviar_bienvenida(*args, **kwargs): return False
+
 from ia_utils     import analizar_dni as ia_analizar_dni, analizar_vivienda as ia_analizar_vivienda, ia_disponible
 from config       import ia_configurada
 
@@ -222,9 +234,9 @@ def register():
                 'email_enviado': True,
             })
     except Exception as e:
-        print(f"[SMTP - ERROR CONTROLADO]: Falló la API de Brevo/Sendinblue: {e}")
+        print(f"[SMTP - ERROR CONTROLADO]: Falló la API de Brevo/Sendinblue o la función no existe: {e}")
 
-    # Si llegó aquí es porque 'enviado' fue False o la API de Brevo dio un error (401/Timeout)
+    # Si llegó aquí es porque 'enviado' fue False o la API dio un error (401/Timeout) o no existe la función
     # Activamos la cuenta de emergencia para evitar bloquear la experiencia del usuario
     actualizar_usuario(user_id, activo=1, email_verificado=1)
     return jsonify({

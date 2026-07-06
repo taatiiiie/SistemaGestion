@@ -761,7 +761,7 @@ def get_categorias():
     conn.close()
     return jsonify([dict(zip(['id','nombre','descripcion','color','icono','activa'], r)) for r in rows])
 
-@app.app.route('/')
+@app.route('/')
 def home():
     return {"status": "Servidor funcionando correctamente", "proyecto": "SistemaGestion"}, 20
 

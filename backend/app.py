@@ -7,7 +7,7 @@ from flask_cors import CORS
 import os, uuid, json, re
 from functools import wraps
 
-import config
+from backend import config
 from ocr_utils    import extraer_texto_imagen, extraer_dni, extraer_nombre_familia, es_imagen_valida
 from database     import (
     iniciar_bd, guardar_solicitud, obtener_solicitud, listar_solicitudes,

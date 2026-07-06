@@ -2,10 +2,14 @@
 app.py — API Flask principal del Sistema de Defensa Civil
 Municipalidad Distrital de Bellavista 2026
 """
+import os
+import uuid
+import json
+import re
+from functools import wraps
 from flask import Flask, request, jsonify, send_file, send_from_directory, render_template
 from flask_cors import CORS
-import os, uuid, json, re
-from functools import wraps
+
 from backend import config
 from ocr_utils    import extraer_texto_imagen, extraer_dni, extraer_nombre_familia, es_imagen_valida
 from database     import (
@@ -32,7 +36,6 @@ from ia_utils     import analizar_dni as ia_analizar_dni, analizar_vivienda as i
 from config       import ia_configurada
 
 BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
-# Configuramos la carpeta frontend como contenedor de archivos estáticos
 FRONTEND_DIR  = BASE_DIR
 
 app = Flask(__name__, static_folder=BASE_DIR, static_url_path='')
@@ -163,7 +166,6 @@ def register():
     password = str(data.get('password', ''))[:200]
     rol      = 'operador'  # Rol por defecto para auto-registro
 
-    # Validaciones
     if not username or not email or not nombre or not password:
         return jsonify({'error': 'Todos los campos son requeridos'}), 400
     if len(username) < 4:
@@ -177,32 +179,26 @@ def register():
     if not ok:
         return jsonify({'error': msg}), 400
 
-    # Verificar conflictos — si la cuenta existe pero no está verificada, eliminarla
-    # para permitir re-registro limpio (cuentas "fantasma" del SMTP roto)
     u_por_username = obtener_usuario(username)
     if u_por_username:
         if not u_por_username['activo']:
-            eliminar_usuario(u_por_username['id'])  # limpiar cuenta sin verificar
+            eliminar_usuario(u_por_username['id'])
         else:
             return jsonify({'error': 'Ese nombre de usuario ya está en uso'}), 409
 
     u_por_email = obtener_usuario_por_email(email)
     if u_por_email:
         if not u_por_email['activo']:
-            eliminar_usuario(u_por_email['id'])  # limpiar cuenta sin verificar
+            eliminar_usuario(u_por_email['id'])
         else:
             return jsonify({'error': 'Ese correo ya está registrado con otra cuenta activa'}), 409
 
     pw_hash = hash_password(password)
-    # Crear usuario inactivo hasta verificar email
     user_id = crear_usuario(username, pw_hash, nombre, rol, email=email, activo=0, email_verificado=0)
-
-    # Generar token de verificación
     token_email = crear_token_email(email, 'verificacion', user_id)
 
-    registrar_log('registro', f'Nuevo usuario: {username} ({email})', ip=_ip())
+    registrar_log('get_db_path', f'Nuevo usuario: {username} ({email})', ip=_ip())
 
-    # Si SMTP no está configurado en absoluto → activar directo (modo desarrollo)
     if not email_configurado():
         actualizar_usuario(user_id, activo=1, email_verificado=1)
         return jsonify({
@@ -211,7 +207,6 @@ def register():
             'email_enviado': False,
         })
 
-    # SMTP configurado → enviar código de verificación
     enviado = enviar_verificacion(email, nombre, token_email)
     if enviado:
         return jsonify({
@@ -220,7 +215,6 @@ def register():
             'email_enviado': True,
         })
     else:
-        # SMTP configurado pero falló al enviar → no activar, mostrar error
         return jsonify({
             'error': f'Cuenta creada pero no se pudo enviar el correo a {email}. '
                      f'Verifica la configuración SMTP o pide al administrador que active tu cuenta.',
@@ -235,7 +229,6 @@ def verify_email():
 
     info = validar_token_email(token, 'verificacion')
     if not info:
-        # Comprobar si el token ya fue usado y la cuenta ya está activa
         import sqlite3 as _sq
         _c = _sq.connect(get_db_path())
         row = _c.execute(
@@ -281,7 +274,6 @@ def resend_verification():
             return jsonify({'ok': True, 'email': email})
         return jsonify({'error': 'No se pudo enviar el correo. Intenta de nuevo.'}), 500
 
-    # No revelar si el correo existe y está activo
     return jsonify({'ok': True, 'email': email})
 
 
@@ -294,7 +286,6 @@ def forgot_password():
         return jsonify({'error': 'Correo inválido'}), 400
 
     usuario = obtener_usuario_por_email(email)
-    # No revelar si el correo existe o no (seguridad)
     if usuario and usuario['activo']:
         token_email = crear_token_email(email, 'reset_password', usuario['id'])
         enviar_reset_password(email, usuario['nombre'], token_email)
@@ -329,7 +320,7 @@ def reset_password():
 
     pw_hash = hash_password(new_password)
     actualizar_usuario(user_id, password_hash=pw_hash)
-    # Invalidar todas las sesiones activas de ese usuario
+    
     import sqlite3
     conn = sqlite3.connect(get_db_path())
     conn.execute('DELETE FROM sesiones WHERE user_id=?', (user_id,))
@@ -337,7 +328,6 @@ def reset_password():
     conn.close()
 
     registrar_log('password_reset', f'Contraseña restablecida', user_id=user_id, ip=_ip())
-
     return jsonify({'ok': True, 'mensaje': 'Contraseña restablecida correctamente. Ya puedes iniciar sesión.'})
 
 
@@ -386,7 +376,6 @@ def post_usuario():
 @require_auth(roles=['supervisor'])
 def put_usuario(uid):
     data = _json()
-    # No permitir cambiar el propio rol
     if uid == request.current_user['id'] and 'rol' in data:
         return jsonify({'error': 'No puedes cambiar tu propio rol'}), 403
 
@@ -445,7 +434,6 @@ def procesar():
     operador_id = request.current_user['id']
     id_unico    = uuid.uuid4().hex
 
-    # Guardar fotos de casa
     rutas_casa = []
     for i, archivo in enumerate(fotos_casa_files[:4]):
         if not archivo or archivo.filename == '':
@@ -464,7 +452,6 @@ def procesar():
     if not rutas_casa:
         return jsonify({'error': 'No se pudo guardar ninguna foto de vivienda'}), 400
 
-    # Guardar foto DNI
     ct_dni = archivo_dni.content_type or ''
     if ct_dni not in ALLOWED_CONTENT_TYPES:
         return jsonify({'error': 'Tipo de archivo DNI no permitido'}), 400
@@ -475,12 +462,10 @@ def procesar():
         os.remove(ruta_dni)
         return jsonify({'error': 'Archivo de imagen DNI inválido'}), 400
 
-    # OCR
     texto_completo = extraer_texto_imagen(ruta_dni)
     dni_ocr        = extraer_dni(texto_completo)
     nombre_ocr     = extraer_nombre_familia(texto_completo)
 
-    # IA
     ia_dni  = {}
     ia_casa = {}
     if ia_disponible():
@@ -765,20 +750,25 @@ def get_categorias():
 
 
 # ── ENRUTAMIENTO DEL FRONTEND INTEGRADOR ─────────────────────────
-@app.route('/')
-def server_index():
-
-    return send_from_directory(BASE_DIR, 'login.html')
 
 @app.route('/')
 def home():
-    # Sirve el archivo login.html directamente al acceder a la raíz del link
-    return send_from_directory(FRONTEND_DIR, 'login.html')
+    """Sirve el archivo login.html directamente al acceder a la raíz del link."""
+    if os.path.exists(os.path.join(BASE_DIR, 'login.html')):
+        return send_from_directory(BASE_DIR, 'login.html')
+    return "Falta el archivo login.html en el servidor de Render.", 500
 
 @app.route('/<path:path>')
 def serve_static(path):
-    # Sirve de manera dinámica el resto de archivos estáticos (index.html, css, js, etc)
-    return send_from_directory(FRONTEND_DIR, path)
+    """Sirve de manera dinámica el resto de archivos estáticos (index.html, css, js, etc)."""
+    # 🛡️ FILTRO DE SEGURIDAD: Bloquear archivos sensibles del backend
+    if path.endswith('.py') or path.endswith('.db') or 'config' in path:
+        return jsonify({'error': 'Acceso no permitido'}), 403
+        
+    if os.path.exists(os.path.join(BASE_DIR, path)):
+        return send_from_directory(BASE_DIR, path)
+        
+    return jsonify({'error': f'El archivo {path} no fue encontrado'}), 404
 
 
 # ── INICIO ───────────────────────────────────────────────────────

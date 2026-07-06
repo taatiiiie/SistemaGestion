@@ -197,7 +197,7 @@ def register():
     user_id = crear_usuario(username, pw_hash, nombre, rol, email=email, activo=0, email_verificado=0)
     token_email = crear_token_email(email, 'verificacion', user_id)
 
-    registrar_log('get_db_path', f'Nuevo usuario: {username} ({email})', ip=_ip())
+    registrar_log('registro', f'Nuevo usuario: {username} ({email})', ip=_ip())
 
     if not email_configurado():
         actualizar_usuario(user_id, activo=1, email_verificado=1)
@@ -620,7 +620,7 @@ def delete_zona(zona_id):
     return jsonify({'ok': True})
 
 
-# ── RECURSOS DE EMERGENCIA ────────────────────────────────────────
+# ── RECURSOS DE EMERGENCY ─────────────────────────────────────────
 
 @app.route('/api/recursos', methods=['GET'])
 @require_auth()
@@ -753,17 +753,26 @@ def get_categorias():
 
 @app.route('/')
 def home():
-    """Sirve el archivo login.html directamente al acceder a la raíz del link."""
+    """Sirve el archivo login.html buscando tanto en backend como en la raíz."""
+    raiz_dir = os.path.dirname(BASE_DIR)
+    if os.path.exists(os.path.join(raiz_dir, 'login.html')):
+        return send_from_directory(raiz_dir, 'login.html')
+        
     if os.path.exists(os.path.join(BASE_DIR, 'login.html')):
         return send_from_directory(BASE_DIR, 'login.html')
-    return "Falta el archivo login.html en el servidor de Render.", 500
+        
+    return "Falta el archivo login.html en el servidor de Render (No está en backend ni en la raíz).", 500
+
 
 @app.route('/<path:path>')
 def serve_static(path):
-    """Sirve de manera dinámica el resto de archivos estáticos (index.html, css, js, etc)."""
-    # 🛡️ FILTRO DE SEGURIDAD: Bloquear archivos sensibles del backend
+    """Sirve dinámicamente los recursos estáticos buscando en ambas carpetas."""
     if path.endswith('.py') or path.endswith('.db') or 'config' in path:
         return jsonify({'error': 'Acceso no permitido'}), 403
+        
+    raiz_dir = os.path.dirname(BASE_DIR)
+    if os.path.exists(os.path.join(raiz_dir, path)):
+        return send_from_directory(raiz_dir, path)
         
     if os.path.exists(os.path.join(BASE_DIR, path)):
         return send_from_directory(BASE_DIR, path)

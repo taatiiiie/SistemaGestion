@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión — Defensa Civil Bellavista</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        :root{
+            --azul:#0d47a1;--azul2:#1565c0;--dorado:#D4A017;
+            --texto:#1A1A2E;--muted:#6B7280;--borde:rgba(0,0,0,.10);
+            --bg:#F4F6FA;--radio:14px;
+        }
+        html,body{height:100%;font-family:'DM Sans',sans-serif}
+        body{background:var(--bg);display:flex;min-height:100vh}
+
+        .panel-izq{
+            flex:1;
+            background:linear-gradient(160deg,#0d1b6e 0%,#0d47a1 55%,#1a237e 100%);
+            display:flex;flex-direction:column;align-items:center;
+            justify-content:center;padding:3rem 2.5rem;color:#fff;
+            position:relative;overflow:hidden;
+        }
+        .panel-izq::before{
+            content:'';position:absolute;inset:0;
+            background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        .panel-izq .logo-wrap{position:relative;z-index:1;text-align:center}
+        .escudo-grande{
+            width:90px;height:90px;background:rgba(255,255,255,.12);
+            border:2px solid rgba(255,255,255,.3);border-radius:50%;
+            display:flex;align-items:center;justify-content:center;
+            margin:0 auto 1.5rem;
+        }
+        .panel-izq h1{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;line-height:1.1;margin-bottom:.5rem}
+        .panel-izq h1 em{font-style:normal;color:var(--dorado)}
+        .panel-izq .subtitulo{font-size:.95rem;opacity:.75;margin-bottom:2.5rem;line-height:1.5}
+        .roles-preview{position:relative;z-index:1;display:flex;flex-direction:column;gap:.75rem;width:100%;max-width:320px;margin-top:1rem}
+        .rol-card{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:1rem 1.25rem;display:flex;align-items:center;gap:1rem}
+        .rol-icon{width:42px;height:42px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .rol-info strong{display:block;font-size:.9rem;font-weight:600}
+        .rol-info span{font-size:.78rem;opacity:.7}
+        .badge-rol{margin-left:auto;background:rgba(212,160,23,.25);color:var(--dorado);border:1px solid rgba(212,160,23,.4);border-radius:6px;padding:2px 8px;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+        .panel-izq .footer-izq{position:absolute;bottom:1.5rem;font-size:.75rem;opacity:.45;z-index:1}
+
+        .panel-der{width:440px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:2.5rem 2rem;background:#fff;box-shadow:-8px 0 40px rgba(0,0,0,.08)}
+        .login-box{width:100%;max-width:360px}
+        .login-box .top-label{font-size:.78rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--azul);margin-bottom:.4rem}
+        .login-box h2{font-family:'Syne',sans-serif;font-size:1.75rem;font-weight:800;color:var(--texto);margin-bottom:.3rem}
+        .login-box .desc{font-size:.88rem;color:var(--muted);margin-bottom:1.75rem;line-height:1.5}
+
+        .form-group{margin-bottom:1.2rem}
+        .form-group label{display:block;font-size:.83rem;font-weight:500;color:var(--texto);margin-bottom:.45rem}
+        .input-wrap{position:relative}
+        .input-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+        .form-group input{width:100%;padding:.75rem 1rem .75rem 2.6rem;border:1.5px solid var(--borde);border-radius:var(--radio);font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--texto);background:#FAFAFA;outline:none;transition:border-color .2s,box-shadow .2s}
+        .form-group input:focus{border-color:var(--azul);box-shadow:0 0 0 3px rgba(13,71,161,.10);background:#fff}
+
+        .btn-primary{width:100%;padding:.85rem;background:linear-gradient(135deg,#0d47a1 0%,#1565c0 100%);color:#fff;border:none;border-radius:var(--radio);font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:600;cursor:pointer;transition:opacity .2s,transform .15s;margin-top:.5rem;display:flex;align-items:center;justify-content:center;gap:.5rem}
+        .btn-primary:hover{opacity:.9}
+        .btn-primary:active{transform:scale(.98)}
+        .btn-primary:disabled{opacity:.6;cursor:not-allowed}
+
+        .error-box{background:#FEE2E2;border:1.5px solid #F87171;color:#991B1B;border-radius:10px;padding:.75rem 1rem;font-size:.85rem;margin-bottom:1rem;display:none;align-items:center;gap:.5rem}
+        .error-box.visible{display:flex}
+
+        .links-row{display:flex;justify-content:space-between;align-items:center;margin-top:1rem;font-size:.82rem}
+        .link-btn{background:none;border:none;color:var(--azul);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;padding:0;text-decoration:underline;text-underline-offset:2px}
+        .link-btn:hover{color:#1565c0}
+
+        .divider{display:flex;align-items:center;gap:.75rem;margin:1.25rem 0;color:var(--muted);font-size:.8rem}
+        .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--borde)}
+
+        .btn-register{width:100%;padding:.75rem;background:#fff;color:var(--azul);border:1.5px solid rgba(13,71,161,.3);border-radius:var(--radio);font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;transition:background .2s,border-color .2s;display:flex;align-items:center;justify-content:center;gap:.5rem}
+        .btn-register:hover{background:#EFF6FF;border-color:var(--azul)}
+
+        .spin{animation:spin .7s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+
+        @media(max-width:720px){
+            body{flex-direction:column}
+            .panel-izq{padding:2rem 1.5rem;min-height:260px}
+            .panel-izq h1{font-size:1.5rem}
+            .roles-preview{display:none}
+            .panel-der{width:100%;box-shadow:none;padding:2rem 1.25rem}
+        }
+    </style>
+</head>
+<body>
+<div class="panel-izq">
+    <div class="logo-wrap">
+        <div class="escudo-grande">
+            <svg width="46" height="46" viewBox="0 0 36 36" fill="none">
+                <path d="M18 2L4 8v10c0 9 6.5 15.5 14 16 7.5-.5 14-7 14-16V8L18 2z" fill="#C41E3A" stroke="#ff6b6b" stroke-width="1"/>
+                <path d="M18 6L7 11v8c0 6.5 4.5 11.5 11 12 6.5-.5 11-5.5 11-12v-8L18 6z" fill="rgba(255,255,255,0.9)"/>
+                <text x="18" y="22" text-anchor="middle" font-family="serif" font-size="11" font-weight="bold" fill="#C41E3A">DC</text>
+            </svg>
+        </div>
+        <h1>Defensa <em>Civil</em><br>Bellavista</h1>
+        <p class="subtitulo">Sistema de Gestión de<br>Solicitudes con Inteligencia Artificial</p>
+    </div>
+    <div class="roles-preview">
+        <div class="rol-card">
+            <div class="rol-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="rol-info"><strong>Operador de Campo</strong><span>Registra solicitudes y sube fotos</span></div>
+            <div class="badge-rol">Campo</div>
+        </div>
+        <div class="rol-card">
+            <div class="rol-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+            </div>
+            <div class="rol-info"><strong>Supervisor / Coordinador</strong><span>Dashboard, informes y gestión</span></div>
+            <div class="badge-rol">Oficina</div>
+        </div>
+    </div>
+    <p class="footer-izq">Municipalidad Distrital de Bellavista © 2026</p>
+</div>
+
+<div class="panel-der">
+    <div class="login-box">
+        <p class="top-label">Sistema Institucional</p>
+        <h2>Iniciar Sesión</h2>
+        <p class="desc">Ingresa tus credenciales para acceder al sistema de Defensa Civil.</p>
+
+        <div class="error-box" id="errorBox">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span id="errorMsg">Error</span>
+        </div>
+        <div class="error-box" id="verifyBox" style="background:#fef3c7;border-color:#fbbf24;color:#92400e;flex-direction:column;align-items:flex-start;gap:.5rem">
+            <div style="display:flex;align-items:center;gap:.5rem">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                <span>Cuenta no verificada. Revisa tu correo o reenvía el enlace.</span>
+            </div>
+            <button type="button" id="btnReenviar" onclick="reenviarVerificacion()" style="background:#0d47a1;color:#fff;border:none;border-radius:8px;padding:.45rem .9rem;font-size:.8rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">
+                Reenviar correo de verificación
+            </button>
+            <div id="reenviarMsg" style="font-size:.8rem;display:none"></div>
+        </div>
+
+        <form id="loginForm" onsubmit="doLogin(event)">
+            <div class="form-group">
+                <label for="email">Correo o usuario</label>
+                <div class="input-wrap">
+                    <span class="input-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+                    <input type="text" id="email" placeholder="admin@defensacivil.pe o admin" autocomplete="username" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <div class="input-wrap">
+                    <span class="input-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span>
+                    <input type="password" id="password" placeholder="Tu contraseña" autocomplete="current-password" required>
+                </div>
+            </div>
+
+            <div class="links-row">
+                <button type="button" class="link-btn" onclick="window.location.href='forgot-password.html'">¿Olvidaste tu contraseña?</button>
+            </div>
+
+            <button type="submit" class="btn-primary" id="btnLogin" style="margin-top:1rem">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                Ingresar al Sistema
+            </button>
+        </form>
+
+        <div class="divider">o</div>
+
+        <button class="btn-register" onclick="window.location.href='register.html'">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            Crear una cuenta
+        </button>
+    </div>
+</div>
+
+<script src="auth.js"></script>
+<script>
+(function(){
+    const u = getUser();
+    if(u && getToken()) window.location.href = homeForRole(u.rol);
+})();
+
+const _ICO_LOGIN = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>`;
+const _ICO_SPIN  = `<svg class="spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>`;
+
+let _lastEmail = '';
+
+async function doLogin(e) {
+    e.preventDefault();
+    const btn    = document.getElementById('btnLogin');
+    const errBox = document.getElementById('errorBox');
+    const errMsg = document.getElementById('errorMsg');
+    errBox.classList.remove('visible');
+    document.getElementById('verifyBox').classList.remove('visible');
+
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    _lastEmail = email;
+    btn.disabled = true;
+    btn.innerHTML = _ICO_SPIN + ' Verificando...';
+
+    try {
+        const res  = await fetch(`${API}/api/login`, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({email, password}),
+        });
+        const data = await res.json();
+        if(res.ok){
+            setAuth(data.token, {rol:data.rol, nombre:data.nombre, id:data.id, email:data.email});
+            // Redirige inmediatamente — sin delay ni toast que desaparezca
+            window.location.href = homeForRole(data.rol);
+        } else {
+            if (data.no_verificado) {
+                document.getElementById('verifyBox').classList.add('visible');
+            } else {
+                errMsg.textContent = data.error || 'Credenciales incorrectas';
+                errBox.classList.add('visible');
+            }
+            btn.disabled = false;
+            btn.innerHTML = _ICO_LOGIN + ' Ingresar al Sistema';
+        }
+    } catch(err){
+        errMsg.textContent = 'No se pudo conectar al servidor. ¿Está ejecutando python app.py?';
+        errBox.classList.add('visible');
+        btn.disabled = false;
+        btn.innerHTML = _ICO_LOGIN + ' Ingresar al Sistema';
+    }
+}
+
+async function reenviarVerificacion() {
+    const btn = document.getElementById('btnReenviar');
+    const msg = document.getElementById('reenviarMsg');
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+    msg.style.display = 'none';
+
+    try {
+        const res  = await fetch(`${API}/api/resend-verification`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email: _lastEmail}),
+        });
+        const data = await res.json();
+        if(res.ok){
+            msg.textContent = `✓ Correo reenviado a ${_lastEmail}. Revisa tu bandeja.`;
+            msg.style.color = '#166534';
+            msg.style.display = 'block';
+            toast(`Correo de verificación enviado a ${_lastEmail}`, 'success', 8000);
+        } else {
+            msg.textContent = data.error || 'Error al reenviar';
+            msg.style.color = '#991B1B';
+            msg.style.display = 'block';
+        }
+    } catch(_) {
+        msg.textContent = 'Sin conexión al servidor';
+        msg.style.color = '#991B1B';
+        msg.style.display = 'block';
+    }
+    btn.disabled = false;
+    btn.textContent = 'Reenviar correo de verificación';
+}
+</script>
+</body>
+</html>

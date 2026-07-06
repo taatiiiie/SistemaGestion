@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operador de Campo — Defensa Civil | Municipalidad de Bellavista</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+    <div class="topbar-inner">
+        <div class="topbar-brand">
+            <div class="escudo">
+                <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+                    <path d="M18 2L4 8v10c0 9 6.5 15.5 14 16 7.5-.5 14-7 14-16V8L18 2z" fill="#C41E3A" stroke="#8B0000" stroke-width="1"/>
+                    <path d="M18 6L7 11v8c0 6.5 4.5 11.5 11 12 6.5-.5 11-5.5 11-12v-8L18 6z" fill="#fff"/>
+                    <text x="18" y="22" text-anchor="middle" font-family="serif" font-size="11" font-weight="bold" fill="#C41E3A">DC</text>
+                </svg>
+            </div>
+            <div class="brand-text">
+                <span class="brand-title">Defensa Civil</span>
+                <span class="brand-sub">Municipalidad Distrital de Bellavista</span>
+            </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:1.2rem;">
+            <span id="iaBadgeTopbar" class="ia-badge-topbar">IA no configurada</span>
+            <div class="topbar-status">
+                <span class="status-dot"></span>
+                <span class="status-label">Sistema Activo</span>
+            </div>
+            <div class="user-info-topbar" id="userInfoTopbar" style="display:flex;align-items:center;gap:.6rem;padding-left:1rem;border-left:1px solid rgba(255,255,255,0.2);">
+                <div class="user-avatar-top"></div>
+                <div style="line-height:1.2;">
+                    <div style="font-size:.82rem;font-weight:600;" id="topbarNombre">—</div>
+                    <div style="font-size:.72rem;opacity:.65;">Operador de Campo</div>
+                </div>
+                <button onclick="logout()" class="btn-logout-top" title="Cerrar sesión">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-bg-pattern"></div>
+    <div class="hero-content">
+        <div class="hero-badge">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M7 1l1.5 3h3l-2.5 2 1 3L7 7.5 4 9l1-3L2.5 4h3z"/></svg>
+            Operador de Campo
+        </div>
+        <h1 class="hero-title">Registrar<br><em>Solicitud</em><br>de Atención</h1>
+        <p class="hero-desc">Sube fotos de la vivienda afectada y el DNI. La IA extrae los datos automáticamente.</p>
+        <div class="hero-stats">
+            <div class="stat"><span class="stat-num" id="totalCount">0</span><span class="stat-label">Registros</span></div>
+            <div class="stat-divider"></div>
+            <div class="stat"><span class="stat-num">4</span><span class="stat-label">Fotos máx.</span></div>
+            <div class="stat-divider"></div>
+            <div class="stat"><span class="stat-num" id="hoyCount">0</span><span class="stat-label">Hoy</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- MAIN -->
+<main class="main-content">
+    <div class="form-section">
+
+        <!-- STEPS -->
+        <div class="steps-bar">
+            <div class="step active" id="step1-indicator"><div class="step-num">1</div><span>Datos y fotos</span></div>
+            <div class="step-line"></div>
+            <div class="step" id="step2-indicator"><div class="step-num">2</div><span>Procesar con IA</span></div>
+            <div class="step-line"></div>
+            <div class="step" id="step3-indicator"><div class="step-num">3</div><span>Descargar PDF</span></div>
+        </div>
+
+        <!-- FORMULARIO -->
+        <div class="form-card" id="step1">
+
+            <!-- Datos de la familia -->
+            <div class="card-header">
+                <div class="card-icon red">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+                </div>
+                <div>
+                    <h2>Datos de la Familia</h2>
+                    <p>Información del titular y la vivienda afectada.</p>
+                </div>
+            </div>
+
+            <div class="nombre-section">
+                <label for="nombreManual">
+                    Nombre de familia
+                    <span class="label-hint">Ej: Familia Saldarriaga Montero</span>
+                </label>
+                <div class="nombre-input-wrap">
+                    <div class="nombre-prefix">Familia</div>
+                    <input type="text" id="nombreManual" placeholder="Saldarriaga Montero" autocomplete="off">
+                </div>
+            </div>
+
+            <div class="nombre-section" style="margin-top:.8rem;">
+                <label for="direccion">
+                    Dirección de la vivienda
+                    <span class="label-hint">Calle, número, urbanización</span>
+                </label>
+                <input type="text" id="direccion" placeholder="Ej: Jr. Las Flores 342, Urb. El Pino"
+                       style="width:100%;padding:.65rem 1rem;border:1.5px solid var(--borde);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--texto);outline:none;"
+                       autocomplete="off">
+            </div>
+
+            <div class="nombre-section" style="margin-top:.8rem;">
+                <label for="numAfectados">
+                    Número de personas afectadas
+                    <span class="label-hint">Incluye todos los convivientes</span>
+                </label>
+                <input type="number" id="numAfectados" min="0" max="9999" placeholder="0"
+                       style="width:160px;padding:.65rem 1rem;border:1.5px solid var(--borde);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--texto);outline:none;">
+            </div>
+
+            <div class="divider-section"></div>
+
+            <!-- Fotos casa -->
+            <div class="card-header" style="border-top: 1px solid var(--borde);">
+                <div class="card-icon red">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 15"/></svg>
+                </div>
+                <div>
+                    <h2>Fotos de la Vivienda</h2>
+                    <p>Sube entre 1 y 4 fotos de la casa afectada</p>
+                </div>
+                <div class="foto-counter"><span id="contadorFotos">0</span>/4</div>
+            </div>
+
+            <div class="multi-upload-area" id="areaFotosCasa">
+                <div class="upload-grid-multi" id="gridFotosCasa">
+                    <div class="upload-slot" id="slot0" onclick="triggerSlot(0)">
+                        <input type="file" id="inputCasa0" accept="image/*" hidden onchange="slotCargado(0, this)">
+                        <div class="slot-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 15"/></svg></div>
+                        <span class="slot-label">Foto 1</span>
+                        <div class="slot-preview" id="prev0"></div>
+                    </div>
+                    <div class="upload-slot locked" id="slot1" onclick="triggerSlot(1)">
+                        <input type="file" id="inputCasa1" accept="image/*" hidden onchange="slotCargado(1, this)">
+                        <div class="slot-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+                        <span class="slot-label">Foto 2</span>
+                        <div class="slot-preview" id="prev1"></div>
+                    </div>
+                    <div class="upload-slot locked" id="slot2" onclick="triggerSlot(2)">
+                        <input type="file" id="inputCasa2" accept="image/*" hidden onchange="slotCargado(2, this)">
+                        <div class="slot-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+                        <span class="slot-label">Foto 3</span>
+                        <div class="slot-preview" id="prev2"></div>
+                    </div>
+                    <div class="upload-slot locked" id="slot3" onclick="triggerSlot(3)">
+                        <input type="file" id="inputCasa3" accept="image/*" hidden onchange="slotCargado(3, this)">
+                        <div class="slot-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+                        <span class="slot-label">Foto 4</span>
+                        <div class="slot-preview" id="prev3"></div>
+                    </div>
+                </div>
+                <p class="upload-hint">Clic en cada cuadro para agregar fotos. La siguiente se desbloquea automáticamente.</p>
+            </div>
+
+            <div class="divider-section"></div>
+
+            <!-- Foto DNI -->
+            <div class="card-header" style="border-top: 1px solid var(--borde);">
+                <div class="card-icon red">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 10a4 4 0 11-8 0"/></svg>
+                </div>
+                <div>
+                    <h2>Foto del DNI</h2>
+                    <p>Foto del DNI del titular (o foto grupal de DNIs). La IA extraerá el número automáticamente.</p>
+                </div>
+            </div>
+
+            <div class="single-upload-wrap">
+                <div class="upload-zone-single" id="zonaDni" onclick="document.getElementById('fotoDni').click()">
+                    <input type="file" id="fotoDni" accept="image/*" hidden onchange="previsualizarDni(this)">
+                    <div class="upload-icon-single">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 10a4 4 0 11-8 0"/></svg>
+                    </div>
+                    <div class="upload-text-single">
+                        <strong>Foto del DNI</strong>
+                        <span>JPG, PNG — clic o arrastra</span>
+                    </div>
+                    <div class="upload-preview-single" id="previewDni"></div>
+                </div>
+            </div>
+
+            <!-- Observaciones -->
+            <div class="extra-field">
+                <label for="observaciones">
+                    Observaciones de campo
+                    <span class="label-optional">opcional</span>
+                </label>
+                <textarea id="observaciones" placeholder="Ej: Pared posterior con grietas de 3cm, riesgo de derrumbe en zona baja..." rows="3"></textarea>
+            </div>
+
+            <button class="btn-procesar" id="btnProcesar">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                Procesar con Inteligencia Artificial
+            </button>
+        </div>
+
+        <!-- PROCESANDO -->
+        <div class="processing-card" id="processingCard" style="display:none">
+            <div class="pulse-ring"></div>
+            <div class="processing-icon">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            </div>
+            <h3>Analizando con IA…</h3>
+            <p>Subiendo fotos y extrayendo datos del DNI</p>
+            <div class="progress-bar"><div class="progress-fill"></div></div>
+        </div>
+
+        <!-- RESULTADO -->
+        <div class="result-card" id="resultCard" style="display:none">
+            <div class="result-header">
+                <div class="result-check">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div>
+                    <h2>Solicitud Registrada</h2>
+                    <p id="resultFecha"></p>
+                </div>
+                <div class="result-id-badge">#<span id="idSolicitud">—</span></div>
+            </div>
+
+            <div class="result-data-grid">
+                <div class="data-item">
+                    <span class="data-label">DNI Extraído (IA)</span>
+                    <span class="data-value" id="dniSpan">—</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Nombre / Familia</span>
+                    <span class="data-value" id="nombreSpan">—</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Dirección</span>
+                    <span class="data-value" id="dirSpan">—</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Fotos de vivienda</span>
+                    <span class="data-value" id="fotosSpan">—</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Personas afectadas</span>
+                    <span class="data-value" id="afectadosSpan">—</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Observaciones</span>
+                    <span class="data-value" id="obsSpan">—</span>
+                </div>
+            </div>
+
+            <!-- Panel IA -->
+            <div id="iaPanel" style="display:none;margin:0 1.5rem 1rem;"></div>
+
+            <div class="result-actions">
+                <button class="btn-pdf" id="btnPDF">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                    Descargar Informe PDF
+                </button>
+                <button class="btn-nueva" id="btnNueva">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    Nueva Solicitud
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SIDEBAR HISTORIAL -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h3>Últimos Registros</h3>
+            <button class="btn-refresh" onclick="cargarHistorial()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+            </button>
+        </div>
+        <div class="historial-list" id="historialList">
+            <div class="historial-empty">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <p>Sin registros aún.</p>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <div class="info-note">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Datos almacenados en el servidor local.
+            </div>
+        </div>
+    </aside>
+</main>
+
+<footer class="footer">
+    <div class="footer-inner">
+        <span>Municipalidad Distrital de Bellavista — Área de Defensa Civil</span>
+        <span>Sistema de Gestión con IA · 2026</span>
+        <span class="footer-tech">Flask · SQLite · Tesseract OCR</span>
+    </div>
+</footer>
+
+<script src="auth.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

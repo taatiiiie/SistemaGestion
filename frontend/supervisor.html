@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Defensa Civil Bellavista</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        :root{
+            --azul:#0d47a1;--azul2:#1565c0;--dorado:#D4A017;
+            --rojo:#dc2626;--verde:#16a34a;--naranja:#ea580c;
+            --texto:#1A1A2E;--muted:#6B7280;
+            --borde:rgba(0,0,0,.08);--bg:#F0F2F7;
+            --sidebar-w:240px;--header-h:60px;
+            --radio:12px;
+            --sombra:0 2px 12px rgba(0,0,0,.07),0 0 0 1px rgba(0,0,0,.04);
+        }
+        html{font-size:15px}
+        body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--texto);display:flex;min-height:100vh}
+
+        /* ── SIDEBAR ── */
+        .sidebar{width:var(--sidebar-w);background:linear-gradient(180deg,#0d1b6e 0%,#0d47a1 100%);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50;overflow-y:auto}
+        .sb-brand{padding:1.25rem 1.25rem 1rem;display:flex;align-items:center;gap:.75rem;border-bottom:1px solid rgba(255,255,255,.1)}
+        .sb-shield{width:38px;height:38px;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .sb-title{color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;line-height:1.2}
+        .sb-sub{font-size:.68rem;color:rgba(255,255,255,.5);margin-top:1px}
+
+        .sb-section{padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.08)}
+        .sb-label{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.4);padding:.6rem 1.25rem .3rem}
+        .sb-item{display:flex;align-items:center;gap:.7rem;padding:.6rem 1.25rem;cursor:pointer;transition:background .15s;border-left:3px solid transparent;color:rgba(255,255,255,.7);font-size:.85rem;font-weight:500;text-decoration:none}
+        .sb-item:hover{background:rgba(255,255,255,.08);color:#fff}
+        .sb-item.active{background:rgba(255,255,255,.12);color:#fff;border-left-color:var(--dorado)}
+        .sb-item .badge{margin-left:auto;background:rgba(220,38,38,.8);color:#fff;border-radius:10px;padding:1px 7px;font-size:.68rem;font-weight:700}
+
+        .sb-user{margin-top:auto;padding:1rem 1.25rem;border-top:1px solid rgba(255,255,255,.1)}
+        .sb-user-name{font-size:.82rem;font-weight:600;color:#fff;margin-bottom:.2rem}
+        .sb-user-role{font-size:.7rem;color:rgba(255,255,255,.5)}
+        .btn-logout-sb{margin-top:.75rem;width:100%;padding:.5rem;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.4rem;transition:background .2s}
+        .btn-logout-sb:hover{background:rgba(255,255,255,.18)}
+
+        /* ── MAIN ── */
+        .main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-width:0}
+        .topbar{background:#fff;border-bottom:1px solid var(--borde);height:var(--header-h);display:flex;align-items:center;padding:0 1.5rem;gap:1rem;position:sticky;top:0;z-index:40;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+        .topbar-title{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;color:var(--texto)}
+        .topbar-breadcrumb{font-size:.8rem;color:var(--muted)}
+        .topbar-right{margin-left:auto;display:flex;align-items:center;gap:.75rem}
+        .notif-btn{position:relative;background:var(--bg);border:1.5px solid var(--borde);border-radius:9px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .2s}
+        .notif-btn:hover{background:#e8ebf1}
+        .notif-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;background:var(--rojo);border-radius:50%;border:1.5px solid #fff;display:none}
+        .notif-dot.show{display:block}
+
+        .content{padding:1.5rem;flex:1;overflow-y:auto}
+
+        /* ── TABS (paneles) ── */
+        .tab-panel{display:none}
+        .tab-panel.active{display:block}
+
+        /* ── STAT CARDS ── */
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:1rem;margin-bottom:1.5rem}
+        .stat-card{background:#fff;border-radius:var(--radio);box-shadow:var(--sombra);padding:1.1rem 1.25rem;display:flex;align-items:center;gap:1rem}
+        .stat-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+        .stat-icon.blue{background:#EFF6FF;color:#2563eb}
+        .stat-icon.green{background:#DCFCE7;color:#16a34a}
+        .stat-icon.gold{background:#FEF3C7;color:#d97706}
+        .stat-icon.red{background:#FEE2E2;color:#dc2626}
+        .stat-icon.purple{background:#F5F3FF;color:#7c3aed}
+        .stat-icon.orange{background:#FFF7ED;color:#ea580c}
+        .stat-num{font-family:'Syne',sans-serif;font-size:1.65rem;font-weight:800;line-height:1;margin-bottom:.15rem}
+        .stat-label{font-size:.73rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+
+        /* ── CARDS GENERALES ── */
+        .card{background:#fff;border-radius:var(--radio);box-shadow:var(--sombra);overflow:hidden;margin-bottom:1rem}
+        .card-header{padding:1rem 1.25rem;border-bottom:1px solid var(--borde);display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap}
+        .card-title{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;color:var(--texto)}
+        .card-body{padding:1.25rem}
+
+        /* ── CHARTS ── */
+        .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+        .chart-card{background:#fff;border-radius:var(--radio);box-shadow:var(--sombra);padding:1rem 1.25rem}
+        .chart-title{font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;color:var(--texto);margin-bottom:1rem}
+        canvas{max-width:100%}
+
+        /* ── TABLA ── */
+        .table-wrap{overflow-x:auto}
+        table{width:100%;border-collapse:collapse}
+        thead tr{background:#F8FAFC}
+        th{padding:.65rem .9rem;text-align:left;font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--borde);white-space:nowrap}
+        td{padding:.75rem .9rem;font-size:.84rem;border-bottom:1px solid rgba(0,0,0,.04);vertical-align:middle}
+        tbody tr:hover{background:#FAFBFF}
+        tbody tr:last-child td{border-bottom:none}
+        .id-badge{display:inline-block;background:var(--bg);border:1px solid var(--borde);border-radius:5px;padding:1px 7px;font-weight:700;font-size:.75rem;color:var(--azul);font-family:monospace}
+
+        /* ── BADGES ── */
+        .badge{display:inline-block;border-radius:20px;padding:2px 10px;font-size:.72rem;font-weight:600}
+        .badge-pendiente{background:#FEF9C3;color:#713F12}
+        .badge-en_proceso{background:#DBEAFE;color:#1e40af}
+        .badge-atendido{background:#DCFCE7;color:#166534}
+        .badge-cerrado{background:#F3F4F6;color:#374151}
+        .badge-disponible{background:#DCFCE7;color:#166534}
+        .badge-en_servicio{background:#DBEAFE;color:#1e40af}
+        .badge-inactivo{background:#F3F4F6;color:#374151}
+        .nivel-bajo{color:#16a34a;font-weight:600}
+        .nivel-medio{color:#d97706;font-weight:600}
+        .nivel-alto{color:#ea580c;font-weight:600}
+        .nivel-critico{color:#dc2626;font-weight:600}
+
+        /* ── CONTROLES TABLA ── */
+        .table-controls{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap}
+        .search-wrap{display:flex;align-items:center;gap:.4rem;border:1.5px solid var(--borde);border-radius:9px;padding:.4rem .8rem;background:var(--bg)}
+        .search-wrap input{border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:.84rem;color:var(--texto);outline:none;width:200px}
+        .btn-sm{display:inline-flex;align-items:center;gap:.35rem;padding:.4rem .85rem;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;border:1.5px solid transparent;transition:background .15s,border-color .15s}
+        .btn-primary{background:var(--azul);color:#fff;border-color:var(--azul)}
+        .btn-primary:hover{background:var(--azul2)}
+        .btn-outline{background:#fff;color:var(--texto);border-color:var(--borde)}
+        .btn-outline:hover{background:var(--bg)}
+        .btn-danger{background:#fee2e2;color:#dc2626;border-color:#fca5a5}
+        .btn-danger:hover{background:#fecaca}
+        .btn-green{background:#dcfce7;color:#16a34a;border-color:#86efac}
+        .btn-green:hover{background:#bbf7d0}
+        .btn-icon{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;border:1.5px solid var(--borde);background:#fff;cursor:pointer;transition:background .15s;color:var(--muted)}
+        .btn-icon:hover{background:var(--bg);color:var(--texto)}
+
+        /* ── PAGINACIÓN ── */
+        .pagination{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.25rem;border-top:1px solid var(--borde);font-size:.8rem;color:var(--muted)}
+        .page-buttons{display:flex;gap:.3rem}
+        .page-btn{border:1.5px solid var(--borde);background:#fff;border-radius:6px;padding:3px 10px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.8rem;transition:background .15s}
+        .page-btn:hover{background:var(--bg)}
+        .page-btn.active{background:var(--azul);color:#fff;border-color:var(--azul)}
+        .page-btn:disabled{opacity:.4;cursor:not-allowed}
+
+        /* ── MODAL ── */
+        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem}
+        .modal-overlay.show{display:flex}
+        .modal{background:#fff;border-radius:16px;width:100%;max-width:500px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+        .modal-header{background:linear-gradient(135deg,#0d1b6e,#0d47a1);padding:1.25rem 1.5rem;display:flex;align-items:center;justify-content:space-between;color:#fff}
+        .modal-header h3{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem}
+        .modal-close{background:none;border:none;color:#fff;cursor:pointer;opacity:.7;font-size:1.3rem;line-height:1;padding:0}
+        .modal-close:hover{opacity:1}
+        .modal-body{padding:1.5rem}
+        .modal-foot{padding:.75rem 1.5rem;border-top:1px solid var(--borde);display:flex;gap:.75rem;justify-content:flex-end}
+        .form-row{margin-bottom:1rem}
+        .form-row label{display:block;font-size:.8rem;font-weight:500;color:var(--texto);margin-bottom:.35rem}
+        .form-row input,.form-row select,.form-row textarea{width:100%;padding:.6rem .9rem;border:1.5px solid var(--borde);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--texto);background:#fafafa;outline:none;transition:border-color .2s}
+        .form-row input:focus,.form-row select:focus,.form-row textarea:focus{border-color:var(--azul);background:#fff}
+        .form-2col{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+
+        /* ── TOAST ── */
+        #toast{position:fixed;top:70px;right:1.25rem;z-index:999;padding:11px 16px;border-radius:11px;font-size:.85rem;box-shadow:0 8px 24px rgba(0,0,0,.12);display:none;align-items:center;gap:.5rem;max-width:320px;font-family:'DM Sans',sans-serif}
+        #toast.show{display:flex}
+        #toast.success{background:#DCFCE7;border:1.5px solid #86EFAC;color:#166534}
+        #toast.error{background:#FEE2E2;border:1.5px solid #F87171;color:#991B1B}
+        #toast.info{background:#EFF6FF;border:1.5px solid #BFDBFE;color:#1e40af}
+
+        /* ── EMPTY ── */
+        .empty-state{padding:3rem 2rem;text-align:center;color:var(--muted)}
+        .empty-state svg{margin-bottom:.75rem;opacity:.3}
+        .empty-state p{font-size:.88rem}
+
+        /* ── ÚLTIMAS SOLICITUDES ── */
+        .recent-list{display:flex;flex-direction:column;gap:.5rem}
+        .recent-item{display:flex;align-items:center;gap:.75rem;padding:.65rem .9rem;border-radius:9px;border:1px solid var(--borde);background:var(--bg)}
+        .recent-num{font-family:monospace;font-weight:700;font-size:.78rem;color:var(--azul);min-width:48px}
+        .recent-name{font-size:.84rem;font-weight:500;flex:1}
+        .recent-date{font-size:.75rem;color:var(--muted)}
+
+        /* ── RESPONSIVE ── */
+        @media(max-width:900px){
+            :root{--sidebar-w:200px}
+            .charts-grid{grid-template-columns:1fr}
+        }
+        @media(max-width:700px){
+            .sidebar{transform:translateX(-100%);transition:transform .3s}
+            .sidebar.open{transform:translateX(0)}
+            .main{margin-left:0}
+            .topbar{padding:0 1rem}
+            .content{padding:1rem}
+            .stats-grid{grid-template-columns:1fr 1fr}
+        }
+
+        .spin{animation:spin .7s linear infinite;display:inline-block}
+        @keyframes spin{to{transform:rotate(360deg)}}
+    </style>
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar" id="sidebar">
+    <div class="sb-brand">
+        <div class="sb-shield">
+            <svg width="22" height="22" viewBox="0 0 36 36" fill="none">
+                <path d="M18 2L4 8v10c0 9 6.5 15.5 14 16 7.5-.5 14-7 14-16V8L18 2z" fill="#C41E3A" stroke="#ff6b6b" stroke-width="1"/>
+                <path d="M18 6L7 11v8c0 6.5 4.5 11.5 11 12 6.5-.5 11-5.5 11-12v-8L18 6z" fill="rgba(255,255,255,0.88)"/>
+                <text x="18" y="22" text-anchor="middle" font-family="serif" font-size="11" font-weight="bold" fill="#C41E3A">DC</text>
+            </svg>
+        </div>
+        <div>
+            <div class="sb-title">Defensa Civil</div>
+            <div class="sb-sub">Bellavista 2026</div>
+        </div>
+    </div>
+
+    <div class="sb-section">
+        <div class="sb-label">Principal</div>
+        <div class="sb-item active" onclick="showTab('dashboard',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Dashboard
+        </div>
+        <div class="sb-item" onclick="showTab('solicitudes',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Solicitudes
+        </div>
+        <div class="sb-item" onclick="showTab('notificaciones',this)" id="notifNav">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+            Notificaciones
+            <span class="badge" id="notifBadgeSb" style="display:none">0</span>
+        </div>
+    </div>
+
+    <div class="sb-section">
+        <div class="sb-label">Gestión</div>
+        <div class="sb-item" onclick="showTab('usuarios',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+            Usuarios
+        </div>
+        <div class="sb-item" onclick="showTab('equipos',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+            Equipos
+        </div>
+        <div class="sb-item" onclick="showTab('recursos',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg>
+            Recursos
+        </div>
+        <div class="sb-item" onclick="showTab('zonas',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Zonas de Riesgo
+        </div>
+    </div>
+
+    <div class="sb-section">
+        <div class="sb-label">Sistema</div>
+        <div class="sb-item" onclick="showTab('logs',this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Actividad
+        </div>
+    </div>
+
+    <div class="sb-user">
+        <div class="sb-user-name" id="sbUserName">—</div>
+        <div class="sb-user-role">Supervisor</div>
+        <button class="btn-logout-sb" onclick="logout()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Cerrar sesión
+        </button>
+    </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<div class="main">
+    <!-- TOPBAR -->
+    <header class="topbar">
+        <div>
+            <div class="topbar-title" id="topbarTitle">Dashboard</div>
+            <div class="topbar-breadcrumb">Defensa Civil Bellavista</div>
+        </div>
+        <div class="topbar-right">
+            <div class="notif-btn" onclick="showTab('notificaciones',null)" title="Notificaciones">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+                <span class="notif-dot" id="notifDot"></span>
+            </div>
+            <div style="font-size:.82rem;color:var(--muted)" id="topbarUser">—</div>
+        </div>
+    </header>
+
+    <div class="content">
+
+        <!-- ═══ DASHBOARD ═══ -->
+        <div class="tab-panel active" id="tab-dashboard">
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card"><div class="stat-icon blue"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div><div class="stat-num" id="s-total">0</div><div class="stat-label">Total solicitudes</div></div></div>
+                <div class="stat-card"><div class="stat-icon green"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div><div class="stat-num" id="s-hoy">0</div><div class="stat-label">Registradas hoy</div></div></div>
+                <div class="stat-card"><div class="stat-icon red"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div><div class="stat-num" id="s-pend">0</div><div class="stat-label">Pendientes</div></div></div>
+                <div class="stat-card"><div class="stat-icon gold"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div><div><div class="stat-num" id="s-afec">0</div><div class="stat-label">Afectados totales</div></div></div>
+                <div class="stat-card"><div class="stat-icon purple"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div><div class="stat-num" id="s-atend">0</div><div class="stat-label">Atendidas</div></div></div>
+                <div class="stat-card"><div class="stat-icon orange"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg></div><div><div class="stat-num" id="s-equip">0</div><div class="stat-label">Equipos disponibles</div></div></div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title">Solicitudes últimos 7 días</div>
+                    <canvas id="chartDias" height="200"></canvas>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-title">Nivel de daño</div>
+                    <canvas id="chartNivel" height="200"></canvas>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Últimas solicitudes</span><button class="btn-sm btn-outline" onclick="showTab('solicitudes',null);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg> Ver todas</button></div>
+                    <div class="card-body" id="recentList"><div class="empty-state"><p>Cargando...</p></div></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><span class="card-title">Por zona de riesgo</span></div>
+                    <div class="card-body" style="padding:.75rem 1.25rem"><canvas id="chartZona" height="220"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ SOLICITUDES ═══ -->
+        <div class="tab-panel" id="tab-solicitudes">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Solicitudes registradas</span>
+                    <div class="table-controls">
+                        <div class="search-wrap">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                            <input type="text" id="searchSol" placeholder="Buscar nombre, DNI, dirección..." oninput="filtrarSolicitudes()">
+                        </div>
+                        <button class="btn-sm btn-outline" onclick="cargarSolicitudes()">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+                            Actualizar
+                        </button>
+                    </div>
+                </div>
+                <div class="table-wrap" id="solTableWrap">
+                    <div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>Cargando...</p></div>
+                </div>
+                <div class="pagination" id="solPag" style="display:none">
+                    <span id="solPagInfo">—</span>
+                    <div class="page-buttons" id="solPagBtns"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ USUARIOS ═══ -->
+        <div class="tab-panel" id="tab-usuarios">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Gestión de usuarios</span>
+                    <button class="btn-sm btn-primary" onclick="openModal('usuario')">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Nuevo usuario
+                    </button>
+                </div>
+                <div class="table-wrap" id="usersTableWrap">
+                    <div class="empty-state"><p>Cargando...</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ EQUIPOS ═══ -->
+        <div class="tab-panel" id="tab-equipos">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Equipos de respuesta</span>
+                    <button class="btn-sm btn-primary" onclick="openModal('equipo')">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Nuevo equipo
+                    </button>
+                </div>
+                <div class="table-wrap" id="equiposTableWrap"><div class="empty-state"><p>Cargando...</p></div></div>
+            </div>
+        </div>
+
+        <!-- ═══ RECURSOS ═══ -->
+        <div class="tab-panel" id="tab-recursos">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Inventario de recursos</span>
+                    <button class="btn-sm btn-primary" onclick="openModal('recurso')">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Nuevo recurso
+                    </button>
+                </div>
+                <div class="table-wrap" id="recursosTableWrap"><div class="empty-state"><p>Cargando...</p></div></div>
+            </div>
+        </div>
+
+        <!-- ═══ ZONAS ═══ -->
+        <div class="tab-panel" id="tab-zonas">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Zonas de riesgo</span>
+                    <button class="btn-sm btn-primary" onclick="openModal('zona')">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Nueva zona
+                    </button>
+                </div>
+                <div class="table-wrap" id="zonasTableWrap"><div class="empty-state"><p>Cargando...</p></div></div>
+            </div>
+        </div>
+
+        <!-- ═══ NOTIFICACIONES ═══ -->
+        <div class="tab-panel" id="tab-notificaciones">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Notificaciones del sistema</span>
+                    <button class="btn-sm btn-outline" onclick="cargarNotificaciones()">Actualizar</button>
+                </div>
+                <div id="notifListWrap"><div class="empty-state"><p>Cargando...</p></div></div>
+            </div>
+        </div>
+
+        <!-- ═══ LOGS ═══ -->
+        <div class="tab-panel" id="tab-logs">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Registro de actividad</span>
+                    <button class="btn-sm btn-outline" onclick="cargarLogs()">Actualizar</button>
+                </div>
+                <div class="table-wrap" id="logsTableWrap"><div class="empty-state"><p>Cargando...</p></div></div>
+            </div>
+        </div>
+
+    </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ── MODALES ── -->
+
+<!-- Modal genérico -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modalBox">
+        <div class="modal-header">
+            <h3 id="modalTitle">Modal</h3>
+            <button class="modal-close" onclick="closeModal()">×</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+        <div class="modal-foot">
+            <button class="btn-sm btn-outline" onclick="closeModal()">Cancelar</button>
+            <button class="btn-sm btn-primary" id="modalSave" onclick="saveModal()">Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div id="toast">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    <span id="toastMsg"></span>
+</div>
+
+<script src="auth.js"></script>
+<script>
+// ── ESTADO GLOBAL ──────────────────────────────────────────────
+let allSolicitudes = [], filteredSol = [], pagSol = 1;
+const POR_PAG = 20;
+let activeTab = 'dashboard';
+let modalType = '', modalEditId = null;
+let chartDias, chartNivel, chartZona;
+
+// ── INIT ──────────────────────────────────────────────────────
+async function init() {
+    const user = await checkAuth('supervisor');
+    if(!user) return;
+    document.getElementById('sbUserName').textContent = user.nombre;
+    document.getElementById('topbarUser').textContent = user.nombre;
+
+    await Promise.all([
+        cargarDashboard(),
+        cargarSolicitudes(),
+        cargarNotificaciones(),
+    ]);
+}
+
+// ── TABS ──────────────────────────────────────────────────────
+function showTab(name, el) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+    document.getElementById('tab-'+name).classList.add('active');
+    if(el) el.classList.add('active');
+    document.getElementById('topbarTitle').textContent = {
+        dashboard:'Dashboard', solicitudes:'Solicitudes',
+        usuarios:'Gestión de Usuarios', equipos:'Equipos',
+        recursos:'Recursos de Emergencia', zonas:'Zonas de Riesgo',
+        notificaciones:'Notificaciones', logs:'Registro de Actividad',
+    }[name] || name;
+    activeTab = name;
+
+    if(name === 'usuarios') cargarUsuarios();
+    else if(name === 'equipos') cargarEquipos();
+    else if(name === 'recursos') cargarRecursos();
+    else if(name === 'zonas') cargarZonas();
+    else if(name === 'logs') cargarLogs();
+    else if(name === 'notificaciones') cargarNotificaciones();
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────
+async function cargarDashboard() {
+    try {
+        const res  = await fetch(`${API}/api/dashboard`, {headers: authHeaders()});
+        if(!res.ok) return;
+        const d = await res.json();
+
+        document.getElementById('s-total').textContent = d.total_solicitudes;
+        document.getElementById('s-hoy').textContent   = d.solicitudes_hoy;
+        document.getElementById('s-pend').textContent  = d.pendientes;
+        document.getElementById('s-afec').textContent  = d.total_afectados;
+        document.getElementById('s-atend').textContent = d.atendidos;
+        document.getElementById('s-equip').textContent = d.equipos_disponibles;
+
+        // Últimas solicitudes
+        const rl = document.getElementById('recentList');
+        if(d.ultimas_solicitudes.length){
+            rl.innerHTML = `<div class="recent-list">${d.ultimas_solicitudes.map(s=>`
+                <div class="recent-item">
+                    <span class="recent-num">#${String(s.id).padStart(4,'0')}</span>
+                    <span class="recent-name">${esc(s.nombre_familia||'Sin nombre')}</span>
+                    <span class="recent-date">${fmtFechaCorta(s.fecha)}</span>
+                </div>`).join('')}</div>`;
+        } else {
+            rl.innerHTML = '<div class="empty-state"><p>Sin solicitudes</p></div>';
+        }
+
+        buildCharts(d);
+    } catch(e){ console.error(e); }
+}
+
+function buildCharts(d) {
+    // Gráfico de días
+    const dias   = d.por_dia.map(x=>x.dia);
+    const totals = d.por_dia.map(x=>x.total);
+    if(chartDias) chartDias.destroy();
+    chartDias = new Chart(document.getElementById('chartDias'), {
+        type:'bar',
+        data:{ labels: dias.map(d=>d.slice(5)), datasets:[{
+            label:'Solicitudes', data: totals,
+            backgroundColor:'rgba(13,71,161,.7)', borderColor:'#0d47a1',
+            borderWidth:1.5, borderRadius:6,
+        }]},
+        options:{responsive:true, plugins:{legend:{display:false}},
+                 scales:{y:{beginAtZero:true, ticks:{stepSize:1}}}}
+    });
+
+    // Gráfico de nivel de daño
+    const niveles = d.por_nivel.map(x=>x.nivel);
+    const nTotals = d.por_nivel.map(x=>x.total);
+    const nColors = niveles.map(n=>({
+        'Sin datos':'#9ca3af','leve':'#22c55e','moderado':'#f59e0b',
+        'grave':'#ef4444','colapso':'#7f1d1d','alto':'#ef4444',
+        'Leve':'#22c55e','Moderado':'#f59e0b','Grave':'#ef4444',
+    }[n]||'#6b7280'));
+    if(chartNivel) chartNivel.destroy();
+    chartNivel = new Chart(document.getElementById('chartNivel'), {
+        type:'doughnut',
+        data:{ labels: niveles, datasets:[{data: nTotals, backgroundColor: nColors, borderWidth:2}]},
+        options:{responsive:true, plugins:{legend:{position:'bottom', labels:{boxWidth:12, font:{size:11}}}}}
+    });
+
+    // Gráfico por zona
+    const zonas  = d.por_zona.map(x=>x.zona);
+    const zTots  = d.por_zona.map(x=>x.total);
+    if(chartZona) chartZona.destroy();
+    chartZona = new Chart(document.getElementById('chartZona'), {
+        type:'bar',
+        data:{ labels: zonas, datasets:[{
+            label:'Solicitudes', data: zTots,
+            backgroundColor:['#3b82f6','#f59e0b','#ef4444','#8b5cf6','#22c55e'],
+            borderRadius:6,
+        }]},
+        options:{responsive:true, indexAxis:'y', plugins:{legend:{display:false}},
+                 scales:{x:{beginAtZero:true, ticks:{stepSize:1}}}}
+    });
+}
+
+// ── SOLICITUDES ────────────────────────────────────────────────
+async function cargarSolicitudes() {
+    try {
+        const res  = await fetch(`${API}/api/solicitudes`, {headers: authHeaders()});
+        if(res.status===401){await logout();return;}
+        allSolicitudes = await res.json();
+        filteredSol = [...allSolicitudes];
+        pagSol = 1;
+        renderSolicitudes();
+    } catch(e){ toast('Error al cargar solicitudes','error'); }
+}
+
+function filtrarSolicitudes() {
+    const q = document.getElementById('searchSol').value.toLowerCase().trim();
+    filteredSol = q ? allSolicitudes.filter(s =>
+        (s.nombre_familia||'').toLowerCase().includes(q) ||
+        (s.dni||'').includes(q) || (s.direccion||'').toLowerCase().includes(q) ||
+        String(s.id).includes(q) || (s.operador||'').toLowerCase().includes(q)
+    ) : [...allSolicitudes];
+    pagSol = 1;
+    renderSolicitudes();
+}
+
+function renderSolicitudes() {
+    const start = (pagSol-1)*POR_PAG;
+    const page  = filteredSol.slice(start, start+POR_PAG);
+    const wrap  = document.getElementById('solTableWrap');
+
+    if(!filteredSol.length){
+        wrap.innerHTML = '<div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>Sin resultados</p></div>';
+        document.getElementById('solPag').style.display='none';
+        return;
+    }
+
+    wrap.innerHTML = `<table><thead><tr>
+        <th>N°</th><th>Nombre/Familia</th><th>DNI</th><th>Dirección</th>
+        <th>Afectados</th><th>Estado</th><th>Zona</th><th>Operador</th><th>Fecha</th><th>Acciones</th>
+    </tr></thead><tbody>${page.map(s=>`<tr>
+        <td><span class="id-badge">#${String(s.id).padStart(4,'0')}</span></td>
+        <td><strong>${esc(s.nombre_familia||'Sin nombre')}</strong>${s.observaciones?`<div style="font-size:.75rem;color:var(--muted);margin-top:1px">${esc(s.observaciones.substring(0,50))}${s.observaciones.length>50?'…':''}</div>`:''}</td>
+        <td>${s.dni&&s.dni!=='No detectado'?`<span style="font-family:monospace;font-weight:700;color:#0d47a1;font-size:.8rem">${esc(s.dni)}</span>`:'<span style="color:#9ca3af;font-size:.76rem">No detectado</span>'}</td>
+        <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.direccion||'—')}</td>
+        <td style="text-align:center">${s.num_afectados||0}</td>
+        <td><span class="badge badge-${s.estado||'pendiente'}">${estadoLabel(s.estado)}</span></td>
+        <td style="font-size:.78rem">${esc(s.zona||'—')}</td>
+        <td style="font-size:.78rem;color:var(--muted)">${esc(s.operador||'—')}</td>
+        <td style="white-space:nowrap;font-size:.78rem">${fmtFechaCorta(s.fecha)}</td>
+        <td><div style="display:flex;gap:.3rem;align-items:center">
+            <button class="btn-sm btn-primary" onclick="descargarPDF(${s.id},this)" style="padding:.3rem .6rem">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>PDF
+            </button>
+            <select onchange="cambiarEstado(${s.id},this.value)" style="font-size:.74rem;padding:3px 5px;border:1px solid var(--borde);border-radius:6px;background:#fff">
+                <option value="pendiente" ${s.estado==='pendiente'?'selected':''}>Pendiente</option>
+                <option value="en_proceso" ${s.estado==='en_proceso'?'selected':''}>En proceso</option>
+                <option value="atendido" ${s.estado==='atendido'?'selected':''}>Atendido</option>
+                <option value="cerrado" ${s.estado==='cerrado'?'selected':''}>Cerrado</option>
+            </select>
+        </div></td>
+    </tr>`).join('')}</tbody></table>`;
+
+    const total = Math.ceil(filteredSol.length/POR_PAG);
+    const pag = document.getElementById('solPag');
+    pag.style.display = total>1 ? 'flex' : 'none';
+    if(total>1){
+        document.getElementById('solPagInfo').textContent = `Mostrando ${start+1}–${Math.min(start+POR_PAG,filteredSol.length)} de ${filteredSol.length}`;
+        let btns='';
+        for(let i=1;i<=total;i++){
+            if(i===1||i===total||Math.abs(i-pagSol)<=2)
+                btns+=`<button class="page-btn ${i===pagSol?'active':''}" onclick="irPagSol(${i})">${i}</button>`;
+            else if(Math.abs(i-pagSol)===3)
+                btns+=`<span style="padding:3px 5px;color:var(--muted)">…</span>`;
+        }
+        document.getElementById('solPagBtns').innerHTML=btns;
+    }
+}
+
+function irPagSol(n){ pagSol=n; renderSolicitudes(); window.scrollTo({top:0,behavior:'smooth'}); }
+
+async function descargarPDF(id, btn) {
+    const orig = btn.innerHTML;
+    btn.disabled=true; btn.innerHTML='<svg class="spin" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>';
+    try{
+        const res = await fetch(`${API}/api/descargar_pdf/${id}`,{headers:authHeaders()});
+        if(res.status===401){await logout();return;}
+        if(!res.ok) throw new Error();
+        const blob=await res.blob(), url=URL.createObjectURL(blob), a=document.createElement('a');
+        a.href=url; a.download=`DefensaCivil_Solicitud_${String(id).padStart(4,'0')}.pdf`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+        toast('PDF descargado','success');
+    }catch(e){ toast('Error al descargar el PDF','error'); }
+    finally{ btn.disabled=false; btn.innerHTML=orig; }
+}
+
+async function cambiarEstado(id, estado) {
+    try{
+        const res = await fetch(`${API}/api/solicitudes/${id}/estado`,{method:'PUT',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({estado})});
+        if(res.ok){ toast('Estado actualizado','success'); await cargarSolicitudes(); if(activeTab==='dashboard') await cargarDashboard(); }
+        else toast('Error al actualizar estado','error');
+    }catch(e){ toast('Error de conexión','error'); }
+}
+
+function estadoLabel(e){ return {pendiente:'Pendiente',en_proceso:'En proceso',atendido:'Atendido',cerrado:'Cerrado'}[e]||e||'Pendiente'; }
+
+// ── USUARIOS ──────────────────────────────────────────────────
+async function cargarUsuarios() {
+    try{
+        const res = await fetch(`${API}/api/usuarios`,{headers:authHeaders()});
+        const data = await res.json();
+        const wrap = document.getElementById('usersTableWrap');
+        if(!data.length){ wrap.innerHTML='<div class="empty-state"><p>Sin usuarios registrados</p></div>'; return; }
+        wrap.innerHTML=`<table><thead><tr><th>ID</th><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Email</th><th>Estado</th><th>Creado</th><th>Acciones</th></tr></thead>
+        <tbody>${data.map(u=>`<tr>
+            <td><span class="id-badge">#${u.id}</span></td>
+            <td><strong>${esc(u.username)}</strong></td>
+            <td>${esc(u.nombre)}</td>
+            <td><span class="badge ${u.rol==='supervisor'?'badge-en_proceso':'badge-atendido'}">${u.rol}</span></td>
+            <td style="font-size:.8rem">${esc(u.email||'—')}</td>
+            <td><span class="badge ${u.activo?'badge-atendido':'badge-cerrado'}">${u.activo?'Activo':'Inactivo'}</span></td>
+            <td style="font-size:.78rem">${fmtFechaCorta(u.creado)}</td>
+            <td><div style="display:flex;gap:.3rem">
+                <button class="btn-sm btn-outline" style="padding:.3rem .5rem" onclick="editarUsuario(${JSON.stringify(u).split('"').join('&quot;')})">Editar</button>
+                <button class="btn-sm btn-danger" style="padding:.3rem .5rem" onclick="eliminarUsuario(${u.id},'${esc(u.username)}')">Eliminar</button>
+            </div></td>
+        </tr>`).join('')}</tbody></table>`;
+    }catch(e){ toast('Error al cargar usuarios','error'); }
+}
+
+function editarUsuario(uStr) {
+    const u = typeof uStr==='string' ? JSON.parse(uStr.split('&quot;').join('"')) : uStr;
+    openModal('usuario', u);
+}
+
+async function eliminarUsuario(id, username) {
+    if(!confirm(`¿Eliminar usuario "${username}"? Esta acción no se puede deshacer.`)) return;
+    const res = await fetch(`${API}/api/usuarios/${id}`,{method:'DELETE',headers:authHeaders()});
+    if(res.ok){ toast('Usuario eliminado','success'); cargarUsuarios(); }
+    else { const d=await res.json(); toast(d.error||'Error','error'); }
+}
+
+// ── EQUIPOS ──────────────────────────────────────────────────
+async function cargarEquipos() {
+    try{
+        const res = await fetch(`${API}/api/equipos`,{headers:authHeaders()});
+        const data = await res.json();
+        const wrap = document.getElementById('equiposTableWrap');
+        if(!data.length){ wrap.innerHTML='<div class="empty-state"><p>Sin equipos registrados</p></div>'; return; }
+        wrap.innerHTML=`<table><thead><tr><th>Nombre</th><th>Tipo</th><th>Líder</th><th>Miembros</th><th>Estado</th><th>Teléfono</th><th>Acciones</th></tr></thead>
+        <tbody>${data.map(e=>`<tr>
+            <td><strong>${esc(e.nombre)}</strong></td>
+            <td>${esc(e.tipo)}</td>
+            <td>${esc(e.lider||'—')}</td>
+            <td style="text-align:center">${e.miembros}</td>
+            <td><span class="badge badge-${e.estado}">${e.estado}</span></td>
+            <td style="font-size:.82rem">${esc(e.telefono||'—')}</td>
+            <td><div style="display:flex;gap:.3rem">
+                <button class="btn-sm btn-outline" style="padding:.3rem .5rem" onclick="editarEquipo(${e.id},'${esc(e.nombre)}','${esc(e.tipo)}','${esc(e.lider||'')}',${e.miembros},'${e.estado}','${esc(e.telefono||'')}')">Editar</button>
+                <button class="btn-sm btn-danger" style="padding:.3rem .5rem" onclick="eliminarItem('equipos',${e.id})">Eliminar</button>
+            </div></td>
+        </tr>`).join('')}</tbody></table>`;
+    }catch(e){ toast('Error','error'); }
+}
+
+function editarEquipo(id,nombre,tipo,lider,miembros,estado,telefono) {
+    openModal('equipo',{id,nombre,tipo,lider,miembros,estado,telefono});
+}
+
+// ── RECURSOS ─────────────────────────────────────────────────
+async function cargarRecursos() {
+    try{
+        const res = await fetch(`${API}/api/recursos`,{headers:authHeaders()});
+        const data = await res.json();
+        const wrap = document.getElementById('recursosTableWrap');
+        if(!data.length){ wrap.innerHTML='<div class="empty-state"><p>Sin recursos registrados</p></div>'; return; }
+        wrap.innerHTML=`<table><thead><tr><th>Nombre</th><th>Categoría</th><th>Cantidad</th><th>Disponible</th><th>Unidad</th><th>Ubicación</th><th>Acciones</th></tr></thead>
+        <tbody>${data.map(r=>`<tr>
+            <td><strong>${esc(r.nombre)}</strong></td>
+            <td>${esc(r.categoria)}</td>
+            <td style="text-align:center;font-weight:600">${r.cantidad}</td>
+            <td style="text-align:center;color:var(--verde);font-weight:600">${r.disponible}</td>
+            <td>${esc(r.unidad)}</td>
+            <td style="font-size:.82rem">${esc(r.ubicacion||'—')}</td>
+            <td><div style="display:flex;gap:.3rem">
+                <button class="btn-sm btn-outline" style="padding:.3rem .5rem" onclick="editarRecurso(${JSON.stringify(r).split('"').join('&quot;')})">Editar</button>
+                <button class="btn-sm btn-danger" style="padding:.3rem .5rem" onclick="eliminarItem('recursos',${r.id})">Eliminar</button>
+            </div></td>
+        </tr>`).join('')}</tbody></table>`;
+    }catch(e){ toast('Error','error'); }
+}
+
+function editarRecurso(rStr) {
+    const r = typeof rStr==='string' ? JSON.parse(rStr.split('&quot;').join('"')) : rStr;
+    openModal('recurso',r);
+}
+
+// ── ZONAS ────────────────────────────────────────────────────
+async function cargarZonas() {
+    try{
+        const res = await fetch(`${API}/api/zonas`,{headers:authHeaders()});
+        const data = await res.json();
+        const wrap = document.getElementById('zonasTableWrap');
+        if(!data.length){ wrap.innerHTML='<div class="empty-state"><p>Sin zonas registradas</p></div>'; return; }
+        wrap.innerHTML=`<table><thead><tr><th>Nombre</th><th>Descripción</th><th>Nivel de riesgo</th><th>Activa</th><th>Acciones</th></tr></thead>
+        <tbody>${data.map(z=>`<tr>
+            <td><strong style="display:flex;align-items:center;gap:.5rem"><span style="width:10px;height:10px;border-radius:50%;background:${esc(z.color)};display:inline-block;flex-shrink:0"></span>${esc(z.nombre)}</strong></td>
+            <td style="font-size:.82rem">${esc(z.descripcion||'—')}</td>
+            <td><span class="nivel-${z.nivel_riesgo}">${z.nivel_riesgo}</span></td>
+            <td><span class="badge ${z.activa?'badge-atendido':'badge-cerrado'}">${z.activa?'Sí':'No'}</span></td>
+            <td><div style="display:flex;gap:.3rem">
+                <button class="btn-sm btn-outline" style="padding:.3rem .5rem" onclick="editarZona(${JSON.stringify(z).split('"').join('&quot;')})">Editar</button>
+                <button class="btn-sm btn-danger" style="padding:.3rem .5rem" onclick="eliminarItem('zonas',${z.id})">Eliminar</button>
+            </div></td>
+        </tr>`).join('')}</tbody></table>`;
+    }catch(e){ toast('Error','error'); }
+}
+
+function editarZona(zStr) {
+    const z = typeof zStr==='string' ? JSON.parse(zStr.split('&quot;').join('"')) : zStr;
+    openModal('zona',z);
+}
+
+// ── NOTIFICACIONES ───────────────────────────────────────────
+async function cargarNotificaciones() {
+    try{
+        const res = await fetch(`${API}/api/notificaciones`,{headers:authHeaders()});
+        const data = await res.json();
+        const noLeidas = data.filter(n=>!n.leida).length;
+        if(noLeidas){
+            document.getElementById('notifDot').classList.add('show');
+            document.getElementById('notifBadgeSb').style.display='inline';
+            document.getElementById('notifBadgeSb').textContent=noLeidas;
+        } else {
+            document.getElementById('notifDot').classList.remove('show');
+            document.getElementById('notifBadgeSb').style.display='none';
+        }
+        const wrap = document.getElementById('notifListWrap');
+        if(!data.length){ wrap.innerHTML='<div class="empty-state"><p>Sin notificaciones</p></div>'; return; }
+        const typeColors = {info:'#dbeafe',alerta:'#fef3c7',exito:'#dcfce7',error:'#fee2e2'};
+        wrap.innerHTML=`<div style="display:flex;flex-direction:column;gap:.5rem;padding:1.25rem">${data.map(n=>`
+        <div style="display:flex;align-items:flex-start;gap:.9rem;padding:.75rem 1rem;border-radius:10px;background:${typeColors[n.tipo]||'#f3f4f6'};border:1px solid rgba(0,0,0,.06);opacity:${n.leida?.5:1}">
+            <div style="flex:1">
+                <div style="font-weight:600;font-size:.85rem">${esc(n.titulo)}</div>
+                <div style="font-size:.8rem;color:var(--muted);margin-top:2px">${esc(n.mensaje)}</div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:4px">${fmtFecha(n.creado)}</div>
+            </div>
+            ${!n.leida?`<button class="btn-sm btn-outline" style="padding:.25rem .5rem;font-size:.72rem" onclick="leerNotif(${n.id})">Marcar leída</button>`:''}
+        </div>`).join('')}</div>`;
+    }catch(e){ toast('Error','error'); }
+}
+
+async function leerNotif(id) {
+    await fetch(`${API}/api/notificaciones/${id}/leer`,{method:'PUT',headers:authHeaders()});
+    cargarNotificaciones();
+}
+
+// ── LOGS ─────────────────────────────────────────────────────
+async function cargarLogs() {
+    try{
+        const res = await fetch(`${API}/api/logs`,{headers:authHeaders()});
+        const data = await res.json();
+        const wrap = document.getElementById('logsTableWrap');
+        if(!data.length){ wrap.innerHTML='<div class="empty-state"><p>Sin actividad registrada</p></div>'; return; }
+        wrap.innerHTML=`<table><thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Detalle</th><th>IP</th></tr></thead>
+        <tbody>${data.map(l=>`<tr>
+            <td style="white-space:nowrap;font-size:.78rem">${fmtFecha(l.fecha)}</td>
+            <td style="font-size:.82rem">${esc(l.usuario)}</td>
+            <td><span style="font-family:monospace;font-size:.78rem;background:var(--bg);padding:2px 7px;border-radius:5px">${esc(l.accion)}</span></td>
+            <td style="font-size:.8rem">${esc(l.detalle||'—')}</td>
+            <td style="font-size:.76rem;color:var(--muted)">${esc(l.ip||'—')}</td>
+        </tr>`).join('')}</tbody></table>`;
+    }catch(e){ toast('Error','error'); }
+}
+
+// ── MODALES ──────────────────────────────────────────────────
+function openModal(type, data=null) {
+    modalType = type; modalEditId = data ? data.id : null;
+    const titles = {usuario:'Usuario',equipo:'Equipo',recurso:'Recurso',zona:'Zona de riesgo'};
+    document.getElementById('modalTitle').textContent = (data?'Editar ':'Nuevo ') + titles[type];
+
+    let html = '';
+    if(type==='usuario'){
+        html=`<div class="form-2col">
+            <div class="form-row"><label>Nombre completo</label><input id="m-nombre" value="${esc(data?.nombre||'')}"></div>
+            <div class="form-row"><label>Usuario</label><input id="m-username" value="${esc(data?.username||'')}" ${data?'readonly':''}></div>
+        </div>
+        <div class="form-2col">
+            <div class="form-row"><label>Email</label><input id="m-email" type="email" value="${esc(data?.email||'')}"></div>
+            <div class="form-row"><label>Rol</label><select id="m-rol"><option value="operador" ${data?.rol==='operador'?'selected':''}>Operador</option><option value="supervisor" ${data?.rol==='supervisor'?'selected':''}>Supervisor</option></select></div>
+        </div>
+        <div class="form-2col">
+            <div class="form-row"><label>${data?'Nueva contraseña (dejar vacío=sin cambios)':'Contraseña'}</label><input id="m-password" type="password" placeholder="${data?'Sin cambio':'Mín. 8 caracteres'}"></div>
+            <div class="form-row"><label>Estado</label><select id="m-activo"><option value="1" ${data?.activo!==0?'selected':''}>Activo</option><option value="0" ${data?.activo===0?'selected':''}>Inactivo</option></select></div>
+        </div>`;
+    } else if(type==='equipo'){
+        html=`<div class="form-2col">
+            <div class="form-row"><label>Nombre del equipo</label><input id="m-nombre" value="${esc(data?.nombre||'')}"></div>
+            <div class="form-row"><label>Tipo</label><select id="m-tipo"><option value="rescate" ${data?.tipo==='rescate'?'selected':''}>Rescate</option><option value="evaluación" ${data?.tipo==='evaluación'?'selected':''}>Evaluación</option><option value="apoyo" ${data?.tipo==='apoyo'?'selected':''}>Apoyo</option><option value="médico" ${data?.tipo==='médico'?'selected':''}>Médico</option></select></div>
+        </div>
+        <div class="form-2col">
+            <div class="form-row"><label>Líder</label><input id="m-lider" value="${esc(data?.lider||'')}"></div>
+            <div class="form-row"><label>N° miembros</label><input id="m-miembros" type="number" min="0" value="${data?.miembros||0}"></div>
+        </div>
+        <div class="form-2col">
+            <div class="form-row"><label>Estado</label><select id="m-estado"><option value="disponible" ${data?.estado==='disponible'?'selected':''}>Disponible</option><option value="en_servicio" ${data?.estado==='en_servicio'?'selected':''}>En servicio</option><option value="inactivo" ${data?.estado==='inactivo'?'selected':''}>Inactivo</option></select></div>
+            <div class="form-row"><label>Teléfono</label><input id="m-telefono" value="${esc(data?.telefono||'')}"></div>
+        </div>`;
+    } else if(type==='recurso'){
+        html=`<div class="form-2col">
+            <div class="form-row"><label>Nombre del recurso</label><input id="m-nombre" value="${esc(data?.nombre||'')}"></div>
+            <div class="form-row"><label>Categoría</label><select id="m-categoria"><option value="albergue" ${data?.categoria==='albergue'?'selected':''}>Albergue</option><option value="alimentación" ${data?.categoria==='alimentación'?'selected':''}>Alimentación</option><option value="agua" ${data?.categoria==='agua'?'selected':''}>Agua</option><option value="salud" ${data?.categoria==='salud'?'selected':''}>Salud</option><option value="general" ${data?.categoria==='general'?'selected':''}>General</option></select></div>
+        </div>
+        <div class="form-2col">
+            <div class="form-row"><label>Cantidad total</label><input id="m-cantidad" type="number" min="0" value="${data?.cantidad||0}"></div>
+            <div class="form-row"><label>Disponible</label><input id="m-disponible" type="number" min="0" value="${data?.disponible||0}"></div>
+        </div>
+        <div class="form-2col">
+            <div class="form-row"><label>Unidad</label><input id="m-unidad" value="${esc(data?.unidad||'unidad')}"></div>
+            <div class="form-row"><label>Ubicación</label><input id="m-ubicacion" value="${esc(data?.ubicacion||'')}"></div>
+        </div>
+        <div class="form-row"><label>Observaciones</label><textarea id="m-observacion" rows="2">${esc(data?.observacion||'')}</textarea></div>`;
+    } else if(type==='zona'){
+        html=`<div class="form-2col">
+            <div class="form-row"><label>Nombre de la zona</label><input id="m-nombre" value="${esc(data?.nombre||'')}"></div>
+            <div class="form-row"><label>Nivel de riesgo</label><select id="m-nivel"><option value="bajo" ${data?.nivel_riesgo==='bajo'?'selected':''}>Bajo</option><option value="medio" ${data?.nivel_riesgo==='medio'?'selected':''}>Medio</option><option value="alto" ${data?.nivel_riesgo==='alto'?'selected':''}>Alto</option><option value="critico" ${data?.nivel_riesgo==='critico'?'selected':''}>Crítico</option></select></div>
+        </div>
+        <div class="form-row"><label>Descripción</label><textarea id="m-descripcion" rows="2">${esc(data?.descripcion||'')}</textarea></div>
+        <div class="form-row"><label>Color identificador</label><input id="m-color" type="color" value="${data?.color||'#f59e0b'}" style="height:36px;padding:4px"></div>`;
+    }
+
+    document.getElementById('modalBody').innerHTML = html;
+    document.getElementById('modalOverlay').classList.add('show');
+}
+
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('show'); }
+
+async function saveModal() {
+    const btn = document.getElementById('modalSave');
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+    try {
+        let url, method, body;
+        if(modalType==='usuario'){
+            const nombre   = document.getElementById('m-nombre').value.trim();
+            const username = document.getElementById('m-username').value.trim();
+            const email    = document.getElementById('m-email').value.trim();
+            const rol      = document.getElementById('m-rol').value;
+            const password = document.getElementById('m-password').value;
+            const activo   = parseInt(document.getElementById('m-activo').value);
+            if(!nombre) { toast('Nombre requerido','error'); return; }
+            body = {nombre,username,email,rol,activo};
+            if(password) body.password = password;
+            url = modalEditId ? `${API}/api/usuarios/${modalEditId}` : `${API}/api/usuarios`;
+            method = modalEditId ? 'PUT' : 'POST';
+        } else if(modalType==='equipo'){
+            body={nombre:document.getElementById('m-nombre').value.trim(),tipo:document.getElementById('m-tipo').value,lider:document.getElementById('m-lider').value.trim(),miembros:parseInt(document.getElementById('m-miembros').value)||0,estado:document.getElementById('m-estado').value,telefono:document.getElementById('m-telefono').value.trim()};
+            url=modalEditId?`${API}/api/equipos/${modalEditId}`:`${API}/api/equipos`; method=modalEditId?'PUT':'POST';
+        } else if(modalType==='recurso'){
+            body={nombre:document.getElementById('m-nombre').value.trim(),categoria:document.getElementById('m-categoria').value,cantidad:parseInt(document.getElementById('m-cantidad').value)||0,disponible:parseInt(document.getElementById('m-disponible').value)||0,unidad:document.getElementById('m-unidad').value.trim()||'unidad',ubicacion:document.getElementById('m-ubicacion').value.trim(),observacion:document.getElementById('m-observacion').value.trim()};
+            url=modalEditId?`${API}/api/recursos/${modalEditId}`:`${API}/api/recursos`; method=modalEditId?'PUT':'POST';
+        } else if(modalType==='zona'){
+            body={nombre:document.getElementById('m-nombre').value.trim(),nivel_riesgo:document.getElementById('m-nivel').value,descripcion:document.getElementById('m-descripcion').value.trim(),color:document.getElementById('m-color').value};
+            url=modalEditId?`${API}/api/zonas/${modalEditId}`:`${API}/api/zonas`; method=modalEditId?'PUT':'POST';
+        }
+
+        const res  = await fetch(url,{method,headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)});
+        const data = await res.json();
+        if(res.ok){
+            toast(modalEditId?'Actualizado correctamente':'Creado correctamente','success');
+            closeModal();
+            if(modalType==='usuario') cargarUsuarios();
+            else if(modalType==='equipo') cargarEquipos();
+            else if(modalType==='recurso') cargarRecursos();
+            else if(modalType==='zona') cargarZonas();
+        } else { toast(data.error||'Error al guardar','error'); }
+    } catch(e){ toast('Error de conexión','error'); }
+    finally { btn.disabled=false; btn.textContent='Guardar'; }
+}
+
+async function eliminarItem(endpoint, id) {
+    if(!confirm('¿Eliminar este elemento? Esta acción no se puede deshacer.')) return;
+    const res = await fetch(`${API}/api/${endpoint}/${id}`,{method:'DELETE',headers:authHeaders()});
+    if(res.ok){
+        toast('Eliminado','success');
+        if(endpoint==='equipos') cargarEquipos();
+        else if(endpoint==='recursos') cargarRecursos();
+        else if(endpoint==='zonas') cargarZonas();
+    } else toast('Error al eliminar','error');
+}
+
+// ── TOAST ────────────────────────────────────────────────────
+function toast(msg, type='success') {
+    const t = document.getElementById('toast');
+    t.className = `show ${type}`;
+    document.getElementById('toastMsg').textContent = msg;
+    clearTimeout(t._t);
+    t._t = setTimeout(()=>{ t.className=''; }, 3500);
+}
+
+// Cerrar modal al click afuera
+document.getElementById('modalOverlay').addEventListener('click', function(e){
+    if(e.target===this) closeModal();
+});
+
+init();
+</script>
+</body>
+</html>

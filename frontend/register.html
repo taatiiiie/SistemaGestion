@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Cuenta — Defensa Civil Bellavista</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap" rel="stylesheet">
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        :root{--azul:#0d47a1;--azul2:#1565c0;--dorado:#D4A017;--texto:#1A1A2E;--muted:#6B7280;--borde:rgba(0,0,0,.10);--bg:#F4F6FA;--radio:14px;--verde:#16a34a}
+        html,body{min-height:100%;font-family:'DM Sans',sans-serif;background:var(--bg)}
+
+        .page-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem 1rem}
+
+        .card{background:#fff;border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.10);width:100%;max-width:500px;overflow:hidden}
+        .card-top{background:linear-gradient(135deg,#0d1b6e,#0d47a1);padding:2rem 2.5rem;text-align:center;color:#fff}
+        .card-top .escudo{width:56px;height:56px;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.3);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:1rem}
+        .card-top h1{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;margin-bottom:.25rem}
+        .card-top p{font-size:.85rem;opacity:.7}
+        .card-body{padding:2rem 2.5rem}
+
+        .form-group{margin-bottom:1.1rem}
+        .form-group label{display:block;font-size:.83rem;font-weight:500;color:var(--texto);margin-bottom:.4rem}
+        .input-wrap{position:relative}
+        .input-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none}
+        .form-group input{width:100%;padding:.7rem 1rem .7rem 2.5rem;border:1.5px solid var(--borde);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--texto);background:#fafafa;outline:none;transition:border-color .2s,box-shadow .2s}
+        .form-group input:focus{border-color:var(--azul);box-shadow:0 0 0 3px rgba(13,71,161,.10);background:#fff}
+        .form-group input.error{border-color:#ef4444}
+        .field-hint{font-size:.74rem;color:var(--muted);margin-top:.3rem}
+
+        .password-strength{margin-top:.4rem;display:none}
+        .ps-bar{height:4px;border-radius:2px;background:#e5e7eb;overflow:hidden;margin-bottom:.3rem}
+        .ps-fill{height:100%;border-radius:2px;transition:width .3s,background .3s;width:0}
+        .ps-text{font-size:.73rem;color:var(--muted)}
+
+        .row2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+
+        .btn-submit{width:100%;padding:.85rem;background:linear-gradient(135deg,#0d47a1,#1565c0);color:#fff;border:none;border-radius:var(--radio);font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:600;cursor:pointer;transition:opacity .2s;display:flex;align-items:center;justify-content:center;gap:.5rem;margin-top:.75rem}
+        .btn-submit:hover{opacity:.9}
+        .btn-submit:disabled{opacity:.6;cursor:not-allowed}
+
+        .alert{border-radius:10px;padding:.8rem 1rem;font-size:.85rem;margin-bottom:1rem;display:none;align-items:center;gap:.5rem}
+        .alert.visible{display:flex}
+        .alert.error{background:#FEE2E2;border:1.5px solid #F87171;color:#991B1B}
+        .alert.success{background:#DCFCE7;border:1.5px solid #86EFAC;color:#166534}
+
+        .back-link{text-align:center;margin-top:1.25rem;font-size:.85rem;color:var(--muted)}
+        .back-link a{color:var(--azul);font-weight:500;text-decoration:none}
+        .back-link a:hover{text-decoration:underline}
+
+        .success-screen{display:none;text-align:center;padding:2rem}
+        .success-screen .check-icon{width:64px;height:64px;background:#DCFCE7;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;margin-bottom:1.25rem}
+        .success-screen h3{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;color:var(--texto);margin-bottom:.75rem}
+        .success-screen p{color:var(--muted);font-size:.9rem;line-height:1.6;margin-bottom:1.5rem}
+        .btn-ir{display:inline-flex;align-items:center;gap:.4rem;background:var(--azul);color:#fff;border:none;border-radius:10px;padding:.75rem 1.5rem;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;text-decoration:none}
+
+        .spin{animation:spin .7s linear infinite}
+        @keyframes spin{to{transform:rotate(360deg)}}
+
+        @media(max-width:540px){
+            .card-body{padding:1.5rem 1.25rem}
+            .row2{grid-template-columns:1fr}
+        }
+    </style>
+</head>
+<body>
+<div class="page-wrap">
+<div class="card">
+    <div class="card-top">
+        <div class="escudo">
+            <svg width="28" height="28" viewBox="0 0 36 36" fill="none">
+                <path d="M18 2L4 8v10c0 9 6.5 15.5 14 16 7.5-.5 14-7 14-16V8L18 2z" fill="#C41E3A" stroke="#ff6b6b" stroke-width="1"/>
+                <path d="M18 6L7 11v8c0 6.5 4.5 11.5 11 12 6.5-.5 11-5.5 11-12v-8L18 6z" fill="rgba(255,255,255,0.9)"/>
+                <text x="18" y="22" text-anchor="middle" font-family="serif" font-size="11" font-weight="bold" fill="#C41E3A">DC</text>
+            </svg>
+        </div>
+        <h1>Crear Cuenta</h1>
+        <p>Sistema de Defensa Civil — Municipalidad de Bellavista</p>
+    </div>
+
+    <div class="card-body">
+        <!-- Formulario de registro -->
+        <div id="formSection">
+            <div class="alert error" id="alertError">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span id="errorMsg"></span>
+            </div>
+
+            <form id="regForm" onsubmit="doRegister(event)">
+                <div class="form-group">
+                    <label>Nombre completo</label>
+                    <div class="input-wrap">
+                        <span class="input-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+                        <input type="text" id="nombre" placeholder="Ej: Juan Pérez Rojas" required autocomplete="name">
+                    </div>
+                </div>
+
+                <div class="row2">
+                    <div class="form-group">
+                        <label>Usuario</label>
+                        <div class="input-wrap">
+                            <span class="input-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></span>
+                            <input type="text" id="username" placeholder="mín. 4 caracteres" required autocomplete="username" pattern="[a-zA-Z0-9_.\-]+" minlength="4">
+                        </div>
+                        <p class="field-hint">Solo letras, números, _, . y -</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Correo electrónico</label>
+                        <div class="input-wrap">
+                            <span class="input-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+                            <input type="email" id="email" placeholder="tu@correo.com" required autocomplete="email">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <div class="input-wrap">
+                        <span class="input-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span>
+                        <input type="password" id="password" placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número" required autocomplete="new-password" oninput="checkPwd(this)">
+                    </div>
+                    <div class="password-strength" id="pwStrength">
+                        <div class="ps-bar"><div class="ps-fill" id="psFill"></div></div>
+                        <span class="ps-text" id="psText"></span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Confirmar contraseña</label>
+                    <div class="input-wrap">
+                        <span class="input-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></span>
+                        <input type="password" id="confirm" placeholder="Repite tu contraseña" required autocomplete="new-password">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit" id="btnReg">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                    Crear mi cuenta
+                </button>
+            </form>
+
+            <p class="back-link">¿Ya tienes cuenta? <a href="login.html">Iniciar sesión</a></p>
+        </div>
+
+        <!-- Pantalla de éxito -->
+        <div class="success-screen" id="successSection">
+            <div class="check-icon">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <h3>¡Cuenta creada!</h3>
+            <p id="successMsg"></p>
+            <div id="emailBadge" style="background:#EFF6FF;border:1.5px solid #93C5FD;border-radius:10px;padding:.65rem 1rem;margin:.75rem 0 1.25rem;font-size:.85rem;color:#1e40af;display:none">
+                <strong>📧 Correo enviado a:</strong><br>
+                <span id="emailDestino" style="font-weight:600;word-break:break-all"></span>
+                <br><span style="font-size:.78rem;opacity:.8">Revisa también la carpeta de spam si no aparece.</span>
+            </div>
+            <a href="login.html" class="btn-ir">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                Ir a iniciar sesion
+            </a>
+        </div>
+    </div>
+</div>
+</div>
+
+<script src="auth.js"></script>
+<script>
+function checkPwd(inp) {
+    const v = inp.value;
+    const el = document.getElementById('pwStrength');
+    const fill = document.getElementById('psFill');
+    const text = document.getElementById('psText');
+    el.style.display = v.length ? 'block' : 'none';
+
+    let score = 0;
+    if(v.length >= 8) score++;
+    if(v.length >= 12) score++;
+    if(/[A-Z]/.test(v)) score++;
+    if(/[0-9]/.test(v)) score++;
+    if(/[^a-zA-Z0-9]/.test(v)) score++;
+
+    const colors = ['#ef4444','#f97316','#eab308','#22c55e','#16a34a'];
+    const labels = ['Muy débil','Débil','Regular','Fuerte','Muy fuerte'];
+    const pct = [20,40,60,80,100];
+    const i = Math.max(0, Math.min(score-1, 4));
+    fill.style.width = pct[i] + '%';
+    fill.style.background = colors[i];
+    text.textContent = labels[i];
+    text.style.color = colors[i];
+}
+
+const _ICO_REG  = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>`;
+const _ICO_SPIN = `<svg class="spin" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>`;
+
+async function doRegister(e) {
+    e.preventDefault();
+    const btn    = document.getElementById('btnReg');
+    const errBox = document.getElementById('alertError');
+    const errMsg = document.getElementById('errorMsg');
+    errBox.classList.remove('visible');
+
+    const nombre   = document.getElementById('nombre').value.trim();
+    const username = document.getElementById('username').value.trim();
+    const email    = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const confirm  = document.getElementById('confirm').value;
+
+    if(password !== confirm){
+        errMsg.textContent = 'Las contraseñas no coinciden';
+        errBox.classList.add('visible');
+        toast('Las contraseñas no coinciden', 'error');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = _ICO_SPIN + ' Creando cuenta...';
+
+    try {
+        const res  = await fetch(`${API}/api/register`, {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({nombre, username, email, password}),
+        });
+        const data = await res.json();
+
+        if(res.ok){
+            document.getElementById('formSection').style.display = 'none';
+            document.getElementById('successSection').style.display = 'block';
+            if(data.email_enviado){
+                document.getElementById('successMsg').textContent = 'Haz clic en el enlace del correo para activar tu cuenta.';
+                document.getElementById('emailBadge').style.display = 'block';
+                document.getElementById('emailDestino').textContent = email;
+                toast(`✓ Email de verificación enviado a ${email}`, 'success', 7000);
+            } else {
+                document.getElementById('successMsg').textContent = data.mensaje || 'Cuenta creada. Puedes iniciar sesión directamente.';
+                toast('Cuenta creada exitosamente', 'success');
+            }
+        } else if(data.cuenta_creada) {
+            document.getElementById('formSection').style.display = 'none';
+            document.getElementById('successSection').style.display = 'block';
+            document.getElementById('successMsg').textContent = 'Cuenta creada pero no se pudo enviar el correo de verificación. Contacta al administrador para activar tu cuenta.';
+            toast('Correo no enviado — contacta al administrador', 'warning', 7000);
+        } else {
+            errMsg.textContent = data.error || 'Error al crear la cuenta';
+            errBox.classList.add('visible');
+            toast(data.error || 'Error al crear la cuenta', 'error');
+            btn.disabled = false;
+            btn.innerHTML = _ICO_REG + ' Crear mi cuenta';
+        }
+    } catch(err){
+        errMsg.textContent = 'No se pudo conectar al servidor';
+        errBox.classList.add('visible');
+        toast('Sin conexión al servidor', 'error');
+        btn.disabled = false;
+        btn.innerHTML = _ICO_REG + ' Crear mi cuenta';
+    }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Pablo\\\\Desktop\\\\sistema_defensa_civil\" | Where-Object { -not $_.PSIsContainer } | Select-Object Name)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\Pablo\\\\Desktop\\\\sistema_defensa_civil\" | Where-Object { $_.PSIsContainer } | Select-Object Name)",
+      "PowerShell(pip list *)",
+      "Bash('C:\\\\Users\\\\Pablo\\\\Desktop\\\\sistema_defensa_civil\\\\venv\\\\Scripts\\\\python.exe' -c ' *)",
+      "Bash(findstr \":5000\")",
+      "Bash(taskkill *)",
+      "PowerShell(Stop-Process *)",
+      "PowerShell(netstat *)",
+      "PowerShell($body = '{\"username\":\"admin\",\"password\":\"DefCivil2026!\"}'; $response = Invoke-RestMethod -Uri \"http://localhost:5000/api/login\" -Method POST -Body $body -ContentType \"application/json\"; Write-Output \"LOGIN OK - Rol: $\\($response.rol\\) - Nombre: $\\($response.nombre\\)\")",
+      "PowerShell(& \"C:\\\\Users\\\\Pablo\\\\Desktop\\\\sistema_defensa_civil\\\\venv\\\\Scripts\\\\pip.exe\" install google-generativeai --quiet; Write-Output \"Instalado OK\")",
+      "PowerShell($body = '{\"username\":\"admin\",\"password\":\"DefCivil2026!\"}'; $r = Invoke-RestMethod -Uri \"http://localhost:5000/api/login\" -Method POST -Body $body -ContentType \"application/json\"; $tok = $r.token; $r2 = Invoke-RestMethod -Uri \"http://localhost:5000/api/ia_status\" -Method GET -Headers @{\"Authorization\"=\"Bearer $tok\"}; Write-Output \"ia_configurada=$\\($r2.ia_configurada\\) | ia_disponible=$\\($r2.ia_disponible\\)\")",
+      "PowerShell(Get-NetTCPConnection *)",
+      "Bash(python *)",
+      "Bash(venv\\\\Scripts\\\\pip.exe list *)",
+      "Bash(del *)",
+      "Bash(venv\\\\Scripts\\\\pip list *)"
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 """
 email_utils.py — Envío de correos electrónicos para el Sistema de Defensa Civil
-Prioridad: Resend API (si RESEND_API_KEY está configurado) → SMTP fallback
+Prioridad: Brevo API → SMTP fallback
 """
 import os
 import smtplib
@@ -11,59 +11,50 @@ import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
 
 
-# ── RESEND ────────────────────────────────────────────────────────
+# ── DOMINIO DEL FRONTEND (Dinámico para Producción) ──────────────────
+def _obtener_base_url():
+    # Si estás en Render u otro hosting, lee la URL pública, sino usa localhost
+    return os.environ.get("FRONTEND_URL", "http://127.0.0.1:5500").rstrip('/')
+
+
+# ── BREVO ────────────────────────────────────────────────────────
 
 def _brevo_disponible() -> bool:
     return bool(os.environ.get("BREVO_API_KEY"))
 
 def _enviar_con_brevo(to_email, subject, html_body):
-
     configuration = sib_api_v3_sdk.Configuration()
-
     configuration.api_key['api-key'] = os.environ.get("BREVO_API_KEY")
 
     api = sib_api_v3_sdk.TransactionalEmailsApi(
         sib_api_v3_sdk.ApiClient(configuration)
     )
 
+    # CORRECCIÓN: Evita remitentes vacíos que rompen la API de Brevo
+    remitente_email = os.environ.get("BREVO_SENDER_EMAIL")
+    if not remitente_email:
+        print("[BREVO CONFIG ERROR]: Falta configurar la variable 'BREVO_SENDER_EMAIL' en Render.")
+        return False
+
     sender = {
-        "name": os.environ.get(
-            "BREVO_SENDER_NAME",
-            "Defensa Civil Bellavista"
-        ),
-        "email": os.environ.get(
-            "BREVO_SENDER_EMAIL"
-        )
+        "name": os.environ.get("BREVO_SENDER_NAME", "Defensa Civil Bellavista"),
+        "email": remitente_email
     }
 
     email = sib_api_v3_sdk.SendSmtpEmail(
-
-        to=[{
-            "email": to_email
-        }],
-
+        to=[{"email": to_email}],
         sender=sender,
-
         subject=subject,
-
         html_content=html_body
-
     )
 
     try:
-
         api.send_transac_email(email)
-
-        print("Correo enviado por Brevo")
-
+        print(f"[Brevo API] Correo enviado con éxito a {to_email}")
         return True
-
     except ApiException as e:
-
-        print(e)
-
+        print(f"[Brevo API Error]: {e}")
         return False
-
 
 
 # ── SMTP (FALLBACK) ───────────────────────────────────────────────
@@ -77,11 +68,9 @@ def _smtp_cfg():
         'from_name': os.environ.get('SMTP_FROM_NAME', 'Defensa Civil Bellavista'),
     }
 
-
 def _smtp_disponible() -> bool:
     cfg = _smtp_cfg()
     return bool(cfg['user'] and cfg['password'])
-
 
 def _enviar_con_smtp(to_email: str, subject: str, html_body: str) -> bool:
     cfg = _smtp_cfg()
@@ -101,7 +90,7 @@ def _enviar_con_smtp(to_email: str, subject: str, html_body: str) -> bool:
         print(f'[SMTP] OK -> {to_email}: {subject}')
         return True
     except smtplib.SMTPAuthenticationError:
-        print('[SMTP] ERROR AUTH - verifica SMTP_USER y SMTP_PASSWORD en config.env')
+        print('[SMTP] ERROR AUTH - verifica SMTP_USER y SMTP_PASSWORD')
         return False
     except smtplib.SMTPException as e:
         print(f'[SMTP] ERROR SMTP -> {e}')
@@ -116,9 +105,7 @@ def _enviar_con_smtp(to_email: str, subject: str, html_body: str) -> bool:
 def email_configurado() -> bool:
     return _brevo_disponible() or _smtp_disponible()
 
-
 def enviar_email(to_email: str, subject: str, html_body: str) -> bool:
-    # Resend primero (no expone correo personal), SMTP como fallback
     if _brevo_disponible():
         ok = _enviar_con_brevo(to_email, subject, html_body)
         if ok:
@@ -147,11 +134,8 @@ def _base_template(titulo: str, contenido: str) -> str:
   .body{{padding:32px;}}
   h2{{margin:0 0 16px;color:#1a1a2e;font-size:20px;}}
   p{{margin:0 0 14px;color:#374151;font-size:15px;line-height:1.6;}}
-  .btn{{display:inline-block;padding:13px 32px;background:#0d47a1;color:#fff;
+  .btn{{display:inline-block;padding:13px 32px;background:#0d47a1;color:#fff !important;
         text-decoration:none;border-radius:10px;font-size:15px;font-weight:600;margin:12px 0;}}
-  .token-box{{background:#f0f4ff;border:1.5px solid #bfdbfe;border-radius:10px;
-              padding:16px 20px;text-align:center;font-size:24px;font-weight:700;
-              letter-spacing:6px;color:#0d47a1;margin:16px 0;}}
   .footer{{background:#f8fafc;padding:18px 32px;text-align:center;
            font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb;}}
   .warning{{background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;
@@ -180,16 +164,17 @@ def _base_template(titulo: str, contenido: str) -> str:
 # ── EMAILS ESPECÍFICOS ────────────────────────────────────────────
 
 def enviar_verificacion(to_email: str, nombre: str, token: str) -> bool:
-    link = f'http://127.0.0.1:5500/frontend/verify-email.html?token={token}'
+    base_url = _obtener_base_url()
+    link = f'{base_url}/frontend/verify-email.html?token={token}'
     contenido = f"""
     <p>Hola <strong>{nombre}</strong>,</p>
     <p>Gracias por registrarte en el <strong>Sistema de Defensa Civil Bellavista</strong>.
-       Para activar tu cuenta, haz clic en el boton:</p>
+       Para activar tu cuenta, haz clic en el botón:</p>
     <p style="text-align:center;margin:24px 0">
       <a class="btn" href="{link}" target="_blank" rel="noopener">Confirmar mi cuenta</a>
     </p>
     <p style="text-align:center;color:#6b7280;font-size:12px;margin-top:8px">
-      Si el boton no abre, copia y pega esta direccion en tu navegador:<br>
+      Si el botón no abre, copia y pega esta dirección en tu navegador:<br>
       <span style="color:#0d47a1">{link}</span>
     </p>
     <div class="warning">
@@ -200,28 +185,30 @@ def enviar_verificacion(to_email: str, nombre: str, token: str) -> bool:
 
 
 def enviar_reset_password(to_email: str, nombre: str, token: str) -> bool:
-    link = f'http://127.0.0.1:5500/frontend/reset-password.html?token={token}'
+    base_url = _obtener_base_url()
+    link = f'{base_url}/frontend/reset-password.html?token={token}'
     contenido = f"""
     <p>Hola <strong>{nombre}</strong>,</p>
-    <p>Recibimos una solicitud para restablecer la contrasena de tu cuenta en el
+    <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en el
        <strong>Sistema de Defensa Civil Bellavista</strong>.</p>
-    <p>Haz clic en el boton para crear tu nueva contrasena:</p>
+    <p>Haz clic en el botón para crear tu nueva contraseña:</p>
     <p style="text-align:center;margin:24px 0">
-      <a class="btn" href="{link}" target="_blank" rel="noopener">Restablecer contrasena</a>
+      <a class="btn" href="{link}" target="_blank" rel="noopener">Restablecer contraseña</a>
     </p>
     <p style="text-align:center;color:#6b7280;font-size:12px;margin-top:8px">
-      Si el boton no abre, copia y pega esta direccion en tu navegador:<br>
+      Si el botón no abre, copia y pega esta dirección en tu navegador:<br>
       <span style="color:#0d47a1">{link}</span>
     </p>
     <div class="warning">
       Este enlace expira en <strong>2 horas</strong>. Si no solicitaste este cambio,
-      ignora este correo y tu contrasena permanecera sin cambios.
+      ignora este correo y tu contraseña permanecerá sin cambios.
     </div>
     """
-    return enviar_email(to_email, 'Restablecer contrasena - Defensa Civil Bellavista', _base_template('Restablecer contrasena', contenido))
+    return enviar_email(to_email, 'Restablecer contraseña - Defensa Civil Bellavista', _base_template('Restablecer contraseña', contenido))
 
 
 def enviar_bienvenida(to_email: str, nombre: str, username: str) -> bool:
+    base_url = _obtener_base_url()
     contenido = f"""
     <p>Hola <strong>{nombre}</strong>,</p>
     <p>Tu cuenta en el <strong>Sistema de Defensa Civil Bellavista</strong> ha sido activada correctamente.</p>
@@ -230,7 +217,7 @@ def enviar_bienvenida(to_email: str, nombre: str, username: str) -> bool:
       <li>Usuario: <strong>{username}</strong></li>
       <li>Contraseña: la que registraste</li>
     </ul>
-    <p style="text-align:center"><a class="btn" href="http://localhost:5500/frontend/login.html">Ir al sistema</a></p>
+    <p style="text-align:center"><a class="btn" href="{base_url}/frontend/login.html">Ir al sistema</a></p>
     <p style="color:#6b7280;font-size:13px;">
       Si tienes problemas para acceder, contacta al administrador del sistema.
     </p>

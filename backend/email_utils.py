@@ -1,183 +1,108 @@
-"""
-email_utils.py — Envío de correos electrónicos para el Sistema de Defensa Civil
-Prioridad: Brevo API → SMTP fallback
-"""
 import os
-import smtplib
-import ssl
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-import sib_api_v3_sdk
-from sib_api_v3_sdk.rest import ApiException
+import requests
 
+def email_configurado():
+    """Valida la presencia de las variables de entorno inyectadas desde Render."""
+    return bool(os.environ.get("BREVO_API_KEY")) and bool(os.environ.get("BREVO_FROM_EMAIL"))
 
-# ── DOMINIO DEL FRONTEND (Dinámico para Producción) ──────────────────
-def _obtener_base_url():
-    # En producción leerá tu URL de Render, si no existe usará localhost por defecto
-    return os.environ.get("FRONTEND_URL", "https://sistema-ticket-eyqv.onrender.com").rstrip('/')
-
-
-# ── BREVO ────────────────────────────────────────────────────────
-
-def _brevo_disponible() -> bool:
-    return bool(os.environ.get("BREVO_API_KEY"))
-
-def _enviar_con_brevo(to_email, subject, html_body):
-    configuration = sib_api_v3_sdk.Configuration()
-    configuration.api_key['api-key'] = os.environ.get("BREVO_API_KEY")
-
-    api = sib_api_v3_sdk.TransactionalEmailsApi(
-        sib_api_v3_sdk.ApiClient(configuration)
-    )
-
-    remitente_email = os.environ.get("BREVO_SENDER_EMAIL")
-    if not remitente_email:
-        print("[BREVO CONFIG ERROR]: Falta configurar la variable 'BREVO_SENDER_EMAIL' en Render.")
+def enviar_reset_password(email, nombre, token):
+    """Envía un correo electrónico estructurado en HTML para el restablecimiento de contraseñas."""
+    api_key = os.environ.get("BREVO_API_KEY")
+    from_email = os.environ.get("BREVO_FROM_EMAIL")
+    from_name = os.environ.get("BREVO_FROM_NAME", "Defensa Civil Bellavista")
+    
+    if not api_key or not from_email:
+        print("[SMTP ADVERTENCIA]: BREVO_API_KEY o BREVO_FROM_EMAIL no configurados en Render.")
         return False
 
-    sender = {
-        "name": os.environ.get("BREVO_SENDER_NAME", "Defensa Civil Bellavista"),
-        "email": remitente_email
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {
+        "accept": "application/json",
+        "api-key": api_key,
+        "content-type": "application/json"
+    }
+    
+    # URL dinámica basada en el host del servidor de Render
+    # Modificar "tu-app-render.onrender.com" por tu subdominio real si es necesario
+    url_recuperacion = f"https://tu-app-render.onrender.com/reset-password.html?token={token}"
+
+    data = {
+        "sender": {"name": from_name, "email": from_email},
+        "to": [{"email": email, "name": nombre}],
+        "subject": "Restablecer tu contraseña — Defensa Civil Bellavista",
+        "htmlContent": f"""
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 30px; color: #1f2937;">
+                <h2 style="color: #1e3a8a; margin-bottom: 20px;">Restablecimiento de Contraseña</h2>
+                <p>Estimado(a) <strong>{nombre}</strong>,</p>
+                <p>Hemos recibido una solicitud para cambiar la contraseña vinculada a tu cuenta de acceso al Sistema de Gestión de Emergencias de Defensa Civil.</p>
+                <p>Para completar este proceso de forma segura, por favor haz clic en el botón inferior:</p>
+                <div style="text-align: center; margin: 35px 0;">
+                    <a href="{url_recuperacion}" style="background-color: #2563eb; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Restablecer mi Contraseña</a>
+                </div>
+                <p style="font-size: 13px; color: #4b5563;">Si el enlace no responde, puedes copiar la siguiente dirección directamente en la barra de tu navegador web:</p>
+                <p style="font-size: 12px; color: #2563eb; word-break: break-all; background-color: #f3f4f6; padding: 10px; border-radius: 4px;">{url_recuperacion}</p>
+                <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+                <p style="font-size: 11px; color: #9ca3af; text-align: center;">Si tú no iniciaste esta solicitud, ignora este mensaje. El token vencerá en el tiempo límite estipulado.</p>
+            </div>
+        """
     }
 
-    email = sib_api_v3_sdk.SendSmtpEmail(
-        to=[{"email": to_email}],
-        sender=sender,
-        subject=subject,
-        html_content=html_body
-    )
-
     try:
-        api.send_transac_email(email)
-        print(f"[Brevo API] Correo enviado con éxito a {to_email}")
-        return True
-    except ApiException as e:
-        print(f"[Brevo API Error]: {e}")
-        return False
-
-
-# ── SMTP (FALLBACK) ───────────────────────────────────────────────
-
-def _smtp_cfg():
-    return {
-        'server':    os.environ.get('SMTP_SERVER', 'smtp.gmail.com'),
-        'port':      int(os.environ.get('SMTP_PORT', '587')),
-        'user':      os.environ.get('SMTP_USER', ''),
-        'password':  os.environ.get('SMTP_PASSWORD', ''),
-        'from_name': os.environ.get('SMTP_FROM_NAME', 'Defensa Civil Bellavista'),
-    }
-
-def _smtp_disponible() -> bool:
-    cfg = _smtp_cfg()
-    return bool(cfg['user'] and cfg['password'])
-
-def _enviar_con_smtp(to_email: str, subject: str, html_body: str) -> bool:
-    cfg = _smtp_cfg()
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = f'{cfg["from_name"]} <{cfg["user"]}>'
-    msg['To'] = to_email
-    msg['X-Mailer'] = 'DefensaCivil-Sistema/2026'
-    msg.attach(MIMEText(html_body, 'html', 'utf-8'))
-    try:
-        context = ssl.create_default_context()
-        with smtplib.SMTP(cfg['server'], cfg['port'], timeout=15) as smtp:
-            smtp.ehlo()
-            smtp.starttls(context=context)
-            smtp.login(cfg['user'], cfg['password'])
-            smtp.sendmail(cfg['user'], to_email, msg.as_string())
-        print(f'[SMTP] OK -> {to_email}: {subject}')
-        return True
-    except smtplib.SMTPAuthenticationError:
-        print('[SMTP] ERROR AUTH - verifica SMTP_USER y SMTP_PASSWORD')
-        return False
-    except smtplib.SMTPException as e:
-        print(f'[SMTP] ERROR SMTP -> {e}')
-        return False
-    except Exception as e:
-        print(f'[SMTP] ERROR -> {type(e).__name__}: {e}')
-        return False
-
-
-# ── INTERFAZ PÚBLICA ──────────────────────────────────────────────
-
-def email_configurado() -> bool:
-    return _brevo_disponible() or _smtp_disponible()
-
-def enviar_email(to_email: str, subject: str, html_body: str) -> bool:
-    if _brevo_disponible():
-        ok = _enviar_con_brevo(to_email, subject, html_body)
-        if ok:
+        response = requests.post(url, headers=headers, json=data, timeout=10)
+        if response.status_code in [200, 201, 202]:
+            print(f"[SMTP ÉXITO]: Correo de recuperación enviado correctamente a: {email}")
             return True
-    if _smtp_disponible():
-        return _enviar_con_smtp(to_email, subject, html_body)
-    print(f'[EMAIL] Sin configurar — email no enviado a {to_email}: {subject}')
-    return False
+        else:
+            print(f"[SMTP API ERROR]: Brevo respondió con código {response.status_code} - {response.text}")
+            return False
+    except Exception as e:
+        print(f"[SMTP EXCEPCIÓN CRÍTICA]: Error en canal de comunicación HTTP con Brevo: {e}")
+        return False
 
+def enviar_verificacion(email, nombre, token):
+    """Envía el código de verificación inicial para activar la cuenta."""
+    api_key = os.environ.get("BREVO_API_KEY")
+    from_email = os.environ.get("BREVO_FROM_EMAIL")
+    from_name = os.environ.get("BREVO_FROM_NAME", "Defensa Civil Bellavista")
+    
+    if not api_key or not from_email:
+        return False
 
-# ── PLANTILLA BASE ────────────────────────────────────────────────
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {"accept": "application/json", "api-key": api_key, "content-type": "application/json"}
+    
+    data = {
+        "sender": {"name": from_name, "email": from_email},
+        "to": [{"email": email, "name": nombre}],
+        "subject": "Código de Verificación — Sistema de Defensa Civil",
+        "htmlContent": f"<h3>Hola, {nombre}</h3><p>Tu código de activación de cuenta es: <strong>{token}</strong></p>"
+    }
+    try:
+        response = requests.post(url, headers=headers, json=data, timeout=10)
+        return response.status_code in [200, 201, 202]
+    except Exception:
+        return False
 
-def _base_template(titulo: str, contenido: str) -> str:
-    return f"""<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-  body{{margin:0;padding:0;background:#f4f6fa;font-family:'Segoe UI',Arial,sans-serif;}}
-  .wrap{{max-width:560px;margin:32px auto;background:#fff;border-radius:16px;
-         overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.10);}}
-  .header{{background:linear-gradient(135deg,#0d1b6e,#0d47a1);padding:28px 32px;text-align:center;}}
-  .header .logo-text{{color:#fff;font-size:22px;font-weight:700;margin:0;}}
-  .header .sub{{color:rgba(255,255,255,.65);font-size:13px;margin-top:4px;}}
-  .body{{padding:32px;}}
-  h2{{margin:0 0 16px;color:#1a1a2e;font-size:20px;}}
-  p{{margin:0 0 14px;color:#374151;font-size:15px;line-height:1.6;}}
-  .btn{{display:inline-block;padding:13px 32px;background:#0d47a1;color:#fff !important;
-        text-decoration:none;border-radius:10px;font-size:15px;font-weight:600;margin:12px 0;}}
-  .footer{{background:#f8fafc;padding:18px 32px;text-align:center;
-           font-size:12px;color:#9ca3af;border-top:1px solid #e5e7eb;}}
-  .warning{{background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;
-            padding:12px 16px;font-size:13px;color:#92400e;margin-top:16px;}}
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="header">
-    <p class="logo-text">Defensa Civil Bellavista</p>
-    <p class="sub">Municipalidad Distrital de Bellavista · Sistema de Gestión</p>
-  </div>
-  <div class="body">
-    <h2>{titulo}</h2>
-    {contenido}
-  </div>
-  <div class="footer">
-    Municipalidad Distrital de Bellavista — Área de Defensa Civil &copy; 2026<br>
-    Este es un correo automático, no responder.
-  </div>
-</div>
-</body>
-</html>"""
+def enviar_bienvenida(email, nombre, username):
+    """Envía un correo de confirmación una vez verificado el usuario."""
+    api_key = os.environ.get("BREVO_API_KEY")
+    from_email = os.environ.get("BREVO_FROM_EMAIL")
+    from_name = os.environ.get("BREVO_FROM_NAME", "Defensa Civil Bellavista")
+    
+    if not api_key or not from_email:
+        return False
 
-
-# ── EMAILS ESPECÍFICOS ────────────────────────────────────────────
-
-def enviar_verificacion(to_email: str, nombre: str, token: str) -> bool:
-    base_url = _obtener_base_url()
-    link = f'{base_url}/frontend/verify-email.html?token={token}'
-    contenido = f"""
-    <p>Hola <strong>{nombre}</strong>,</p>
-    <p>Gracias por registrarte en el <strong>Sistema de Defensa Civil Bellavista</strong>.
-       Para activar tu cuenta, haz clic en el botón:</p>
-    <p style="text-align:center;margin:24px 0">
-      <a class="btn" href="{link}" target="_blank" rel="noopener">Confirmar mi cuenta</a>
-    </p>
-    <p style="text-align:center;color:#6b7280;font-size:12px;margin-top:8px">
-      Si el botón no abre, copia y pega esta dirección en tu navegador:<br>
-      <span style="color:#0d47a1">{link}</span>
-    </p>
-    <div class="warning">
-      Este enlace expira en <strong>24 horas</strong>. Si no creaste una cuenta, ignora este correo.
-    </div>
-    """
-    return enviar_email(to_email, 'Confirma tu cuenta - Defensa Civil Bellavista', _base_template('Confirma tu cuenta', contenido))
+    url = "https://api.brevo.com/v3/smtp/email"
+    headers = {"accept": "application/json", "api-key": api_key, "content-type": "application/json"}
+    
+    data = {
+        "sender": {"name": from_name, "email": from_email},
+        "to": [{"email": email, "name": nombre}],
+        "subject": "¡Bienvenido al Sistema de Defensa Civil!",
+        "htmlContent": f"<h3>Registro Exitoso</h3><p>Hola {nombre}, tu usuario '{username}' ha sido activado correctamente.</p>"
+    }
+    try:
+        response = requests.post(url, headers=headers, json=data, timeout=10)
+        return response.status_code in [200, 201, 202]
+    except Exception:
+        return False

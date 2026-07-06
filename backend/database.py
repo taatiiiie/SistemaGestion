@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import pg8000
+from pg8000.native import Connection  # <-- Importamos la conexión nativa limpia
 
 def get_db_path():
     """Ruta por defecto para el fallback local de SQLite."""
@@ -8,15 +9,29 @@ def get_db_path():
     return os.path.join(base_dir, "defensa_civil.db")
 
 def obtener_conexion():
-    """Retorna una conexión activa a PostgreSQL (Render via pg8000) o SQLite (Local)."""
+    """Retorna una conexión activa a PostgreSQL o SQLite (Local)."""
     url_db = os.environ.get("DATABASE_URL")
     if url_db:
-        # Reemplazo de seguridad por si Render entrega la URL con 'postgres://'
         if url_db.startswith("postgres://"):
             url_db = url_db.replace("postgres://", "postgresql://", 1)
         
-        # pg8000 se conecta de forma nativa sin pedir herramientas de Windows
-        return pg8000.connect(url=url_db)
+        # Parseamos la URL para extraer los parámetros limpios que necesita pg8000
+        # Esto quita el error del parámetro 'url'
+        import urllib.parse
+        result = urllib.parse.urlparse(url_db)
+        username = result.username
+        password = result.password
+        database = result.path[1:]
+        hostname = result.hostname
+        port = result.port or 5432
+
+        return pg8000.connect(
+            user=username,
+            password=password,
+            host=hostname,
+            port=port,
+            database=database
+        )
     else:
         conn = sqlite3.connect(get_db_path())
         conn.row_factory = sqlite3.Row

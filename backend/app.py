@@ -34,7 +34,7 @@ from config       import ia_configurada
 
 BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
 # Configuramos la carpeta frontend como contenedor de archivos estáticos
-FRONTEND_DIR  = os.path.join(BASE_DIR, 'frontend')
+FRONTEND_DIR  = BASE_DIR
 
 app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path='')
 app.secret_key = os.environ.get('DC_SECRET', 'dc-bellavista-2026-local-key')

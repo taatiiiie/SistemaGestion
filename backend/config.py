@@ -47,3 +47,9 @@ def proveedor_ia() -> str:
     if gemini and gemini != 'TU_CLAVE_AQUI':
         return 'gemini'
     return ''
+
+def email_configurada():
+
+    return bool(
+        os.environ.get("BREVO_API_KEY")
+    )

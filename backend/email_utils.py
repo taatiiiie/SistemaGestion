@@ -7,33 +7,63 @@ import smtplib
 import ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
 
 
 # ── RESEND ────────────────────────────────────────────────────────
 
-def _resend_disponible() -> bool:
-    return bool(os.environ.get('RESEND_API_KEY', ''))
+def _brevo_disponible() -> bool:
+    return bool(os.environ.get("BREVO_API_KEY"))
 
+def _enviar_con_brevo(to_email, subject, html_body):
 
-def _enviar_con_resend(to_email: str, subject: str, html_body: str) -> bool:
-    import resend
-    resend.api_key = os.environ.get('RESEND_API_KEY', '')
-    from_addr = os.environ.get('RESEND_FROM', 'onboarding@resend.dev')
-    from_name = os.environ.get('SMTP_FROM_NAME', 'Defensa Civil Bellavista')
-    params = {
-        "from": f"{from_name} <{from_addr}>",
-        "to": [to_email],
-        "subject": subject,
-        "html": html_body,
+    configuration = sib_api_v3_sdk.Configuration()
+
+    configuration.api_key['api-key'] = os.environ.get("BREVO_API_KEY")
+
+    api = sib_api_v3_sdk.TransactionalEmailsApi(
+        sib_api_v3_sdk.ApiClient(configuration)
+    )
+
+    sender = {
+        "name": os.environ.get(
+            "BREVO_SENDER_NAME",
+            "Defensa Civil Bellavista"
+        ),
+        "email": os.environ.get(
+            "BREVO_SENDER_EMAIL"
+        )
     }
+
+    email = sib_api_v3_sdk.SendSmtpEmail(
+
+        to=[{
+            "email": to_email
+        }],
+
+        sender=sender,
+
+        subject=subject,
+
+        html_content=html_body
+
+    )
+
     try:
-        r = resend.Emails.send(params)
-        ok = bool(getattr(r, 'id', None) or (isinstance(r, dict) and r.get('id')))
-        print(f'[RESEND] {"OK" if ok else "SIN ID"} -> {to_email}: {subject}')
-        return ok
-    except Exception as e:
-        print(f'[RESEND] ERROR -> {type(e).__name__}: {e}')
+
+        api.send_transac_email(email)
+
+        print("Correo enviado por Brevo")
+
+        return True
+
+    except ApiException as e:
+
+        print(e)
+
         return False
+
 
 
 # ── SMTP (FALLBACK) ───────────────────────────────────────────────
@@ -84,13 +114,13 @@ def _enviar_con_smtp(to_email: str, subject: str, html_body: str) -> bool:
 # ── INTERFAZ PÚBLICA ──────────────────────────────────────────────
 
 def email_configurado() -> bool:
-    return _resend_disponible() or _smtp_disponible()
+    return _brevo_disponible() or _smtp_disponible()
 
 
 def enviar_email(to_email: str, subject: str, html_body: str) -> bool:
     # Resend primero (no expone correo personal), SMTP como fallback
-    if _resend_disponible():
-        ok = _enviar_con_resend(to_email, subject, html_body)
+    if _brevo_disponible():
+        ok = _enviar_con_brevo(to_email, subject, html_body)
         if ok:
             return True
     if _smtp_disponible():

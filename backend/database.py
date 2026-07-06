@@ -1,7 +1,6 @@
 import os
 import sqlite3
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import pg8000
 
 def get_db_path():
     """Ruta por defecto para el fallback local de SQLite."""
@@ -9,13 +8,15 @@ def get_db_path():
     return os.path.join(base_dir, "defensa_civil.db")
 
 def obtener_conexion():
-    """Retorna una conexión activa a PostgreSQL (Render) o SQLite (Local)."""
+    """Retorna una conexión activa a PostgreSQL (Render via pg8000) o SQLite (Local)."""
     url_db = os.environ.get("DATABASE_URL")
     if url_db:
-        # Reemplazo de seguridad por si Render entrega la URL antigua con 'postgres://'
+        # Reemplazo de seguridad por si Render entrega la URL con 'postgres://'
         if url_db.startswith("postgres://"):
             url_db = url_db.replace("postgres://", "postgresql://", 1)
-        return psycopg2.connect(url_db)
+        
+        # pg8000 se conecta de forma nativa sin pedir herramientas de Windows
+        return pg8000.connect(url=url_db)
     else:
         conn = sqlite3.connect(get_db_path())
         conn.row_factory = sqlite3.Row

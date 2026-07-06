@@ -1,8 +1,9 @@
 // auth.js — Utilidades de autenticación compartidas
+
 // Detecta automáticamente si estás en local o en Render
 const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:5000/api'
-    : `${window.location.origin}/api`;
+    : '/api'; // En Render usa la ruta relativa del propio servidor de producción
 
 function getToken()  { return localStorage.getItem('dc_token'); }
 function getUser()   { const u = localStorage.getItem('dc_user'); return u ? JSON.parse(u) : null; }
@@ -49,7 +50,8 @@ async function checkAuth(rolRequerido) {
 
 async function logout() {
     try {
-        await fetch(`${API}/api/logout`, { method: 'POST', headers: authHeaders() });
+        // CORREGIDO: Se cambió 'API' por 'API_URL' que es la variable correcta
+        await fetch(`${API_URL}/logout`, { method: 'POST', headers: authHeaders() });
     } catch (_) {}
     clearAuth();
     window.location.href = 'login.html';
@@ -110,7 +112,7 @@ function toast(msg, tipo = 'success', duracion = 6000) {
     ].join(';');
     el.innerHTML = `<span style="font-weight:800;font-size:1.1rem;flex-shrink:0;margin-top:1px">${p.icon}</span><span>${msg}</span>`;
     container.appendChild(el);
-    // setTimeout en lugar de rAF — garantiza que el DOM pintó antes de animar
+    
     setTimeout(() => {
         el.style.opacity = '1';
         el.style.transform = 'translateX(0)';

@@ -2,7 +2,7 @@
 app.py — API Flask principal del Sistema de Defensa Civil
 Municipalidad Distrital de Bellavista 2026
 """
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, send_from_directory
 from flask_cors import CORS
 import os, uuid, json, re
 from functools import wraps
@@ -32,12 +32,15 @@ from email_utils  import enviar_verificacion, enviar_reset_password, enviar_bien
 from ia_utils     import analizar_dni as ia_analizar_dni, analizar_vivienda as ia_analizar_vivienda, ia_disponible
 from config       import ia_configurada
 
-app = Flask(__name__)
+BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
+# Configuramos la carpeta frontend como contenedor de archivos estáticos
+FRONTEND_DIR  = os.path.join(BASE_DIR, 'frontend')
+
+app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path='')
 app.secret_key = os.environ.get('DC_SECRET', 'dc-bellavista-2026-local-key')
 
 CORS(app, supports_credentials=False)
 
-BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 TEMP_PDF_DIR  = os.path.join(BASE_DIR, 'temp_pdfs')
 
@@ -761,9 +764,19 @@ def get_categorias():
     conn.close()
     return jsonify([dict(zip(['id','nombre','descripcion','color','icono','activa'], r)) for r in rows])
 
+
+# ── ENRUTAMIENTO DEL FRONTEND INTEGRADOR ─────────────────────────
+
 @app.route('/')
 def home():
-    return {"status": "Servidor funcionando correctamente", "proyecto": "SistemaGestion"}, 20
+    # Sirve el archivo login.html directamente al acceder a la raíz del link
+    return send_from_directory(FRONTEND_DIR, 'login.html')
+
+@app.route('/<path:path>')
+def serve_static(path):
+    # Sirve de manera dinámica el resto de archivos estáticos (index.html, css, js, etc)
+    return send_from_directory(FRONTEND_DIR, path)
+
 
 # ── INICIO ───────────────────────────────────────────────────────
 

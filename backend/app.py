@@ -2,11 +2,10 @@
 app.py — API Flask principal del Sistema de Defensa Civil
 Municipalidad Distrital de Bellavista 2026
 """
-from flask import Flask, request, jsonify, send_file, send_from_directory
+from flask import Flask, request, jsonify, send_file, send_from_directory, render_template
 from flask_cors import CORS
 import os, uuid, json, re
 from functools import wraps
-
 from backend import config
 from ocr_utils    import extraer_texto_imagen, extraer_dni, extraer_nombre_familia, es_imagen_valida
 from database     import (
@@ -36,7 +35,7 @@ BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
 # Configuramos la carpeta frontend como contenedor de archivos estáticos
 FRONTEND_DIR  = BASE_DIR
 
-app = Flask(__name__, static_folder=FRONTEND_DIR, static_url_path='')
+app = Flask(__name__, static_folder=BASE_DIR, static_url_path='')
 app.secret_key = os.environ.get('DC_SECRET', 'dc-bellavista-2026-local-key')
 
 CORS(app, supports_credentials=False)
@@ -766,6 +765,10 @@ def get_categorias():
 
 
 # ── ENRUTAMIENTO DEL FRONTEND INTEGRADOR ─────────────────────────
+@app.route('/')
+def server_index():
+
+    return send_from_directory(BASE_DIR, 'login.html')
 
 @app.route('/')
 def home():

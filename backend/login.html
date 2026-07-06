@@ -202,14 +202,14 @@ async function doLogin(e) {
     btn.innerHTML = _ICO_SPIN + ' Verificando...';
 
     try {
-        const res  = await fetch(`${API}/api/login`, {
+        // CORREGIDO: Cambiado `${API}` por `${API_URL}` de auth.js
+        const res  = await fetch(`${API_URL}/login`, {
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({email, password}),
         });
         const data = await res.json();
         if(res.ok){
             setAuth(data.token, {rol:data.rol, nombre:data.nombre, id:data.id, email:data.email});
-            // Redirige inmediatamente — sin delay ni toast que desaparezca
             window.location.href = homeForRole(data.rol);
         } else {
             if (data.no_verificado) {
@@ -237,7 +237,8 @@ async function reenviarVerificacion() {
     msg.style.display = 'none';
 
     try {
-        const res  = await fetch(`${API}/api/resend-verification`, {
+        // CORREGIDO: Cambiado `${API}` por `${API_URL}` de auth.js
+        const res  = await fetch(`${API_URL}/resend-verification`, {
             method: 'POST', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({email: _lastEmail}),
         });

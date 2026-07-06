@@ -127,7 +127,8 @@ document.getElementById('btnProcesar').addEventListener('click', async function(
     formData.append('num_afectados', numAfectados);
 
     try {
-        const res  = await fetch(`${API}/api/procesar`, {
+        // CORREGIDO: Cambiado `${API}` por `${API_URL}`
+        const res  = await fetch(`${API_URL}/procesar`, {
             method: 'POST',
             headers: authHeaders(),   // Solo Authorization, sin Content-Type (FormData lo pone solo)
             body: formData,
@@ -160,7 +161,8 @@ document.getElementById('btnProcesar').addEventListener('click', async function(
                 const btn = document.getElementById('btnPDF');
                 btn.disabled = true;
                 try {
-                    const pdfRes = await fetch(`${API}/api/descargar_pdf/${data.id}`, {
+                    // CORREGIDO: Cambiado `${API}` por `${API_URL}`
+                    const pdfRes = await fetch(`${API_URL}/descargar_pdf/${data.id}`, {
                         headers: authHeaders()
                     });
                     if (!pdfRes.ok) { throw new Error(); }
@@ -233,7 +235,8 @@ function setStep(n) {
 // ── HISTORIAL ─────────────────────────────────────────────────────
 async function cargarHistorial() {
     try {
-        const res  = await fetch(`${API}/api/solicitudes`, { headers: authHeaders() });
+        // CORREGIDO: Cambiado `${API}` por `${API_URL}`
+        const res  = await fetch(`${API_URL}/solicitudes`, { headers: authHeaders() });
         if (res.status === 401) { clearAuth(); window.location.href = 'login.html'; return; }
         const data = await res.json();
         const list = document.getElementById('historialList');
@@ -279,7 +282,8 @@ async function cargarHistorial() {
 async function descargarPDFSidebar(id, btn) {
     btn.style.opacity = '.5';
     try {
-        const res = await fetch(`${API}/api/descargar_pdf/${id}`, { headers: authHeaders() });
+        // CORREGIDO: Cambiado `${API}` por `${API_URL}`
+        const res = await fetch(`${API_URL}/descargar_pdf/${id}`, { headers: authHeaders() });
         if (!res.ok) throw new Error();
         const blob = await res.blob();
         const url  = URL.createObjectURL(blob);
@@ -383,7 +387,8 @@ function mostrarResultadoIA(data) {
 // ── VERIFICAR ESTADO IA AL CARGAR ─────────────────────────────────
 async function verificarEstadoIA() {
     try {
-        const res  = await fetch(`${API}/api/ia_status`, { headers: authHeaders() });
+        // CORREGIDO: Cambiado `${API}` por `${API_URL}`
+        const res  = await fetch(`${API_URL}/ia_status`, { headers: authHeaders() });
         const data = await res.json();
         const badge = document.getElementById('iaBadgeTopbar');
         if (badge) {

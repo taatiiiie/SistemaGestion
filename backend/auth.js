@@ -1,9 +1,8 @@
 // auth.js — Utilidades de autenticación compartidas
-const API_HOST = localStorage.getItem('dc_api_host')
-    || (location.protocol.startsWith('http') && !['localhost', '127.0.0.1'].includes(location.hostname)
-        ? location.hostname
-        : 'localhost');
-const API = `http://${API_HOST}:5000`;
+// Detecta automáticamente si estás en local o en Render
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5000/api'
+    : `${window.location.origin}/api`;
 
 function getToken()  { return localStorage.getItem('dc_token'); }
 function getUser()   { const u = localStorage.getItem('dc_user'); return u ? JSON.parse(u) : null; }
